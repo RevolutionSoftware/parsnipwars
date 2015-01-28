@@ -1,0 +1,300 @@
+;;; famwars.z80
+;################################
+;#        Fam Wars - 83+        #
+;################################
+
+.nolist
+#include "ti83plus.inc"
+#include "ion.inc"
+.list
+
+;EQUATES
+gbuf    = grbuf
+
+group0  = %11111110
+
+group1  = %11111101
+diClear = %10111111
+
+group2  = %11111011
+;etc.
+
+mapX    = saferam1
+mapY    = mapX+1
+mapWidth= mapY+1
+mapHeight  = mapWidth+1
+mapPtr  = mapHeight+1       ;mapPtr = ¡¡2 bytes!!
+cursorX = mapPtr+2
+cursorY = cursorX+1
+
+.db $BB,$6D                 ; Magic token
+.org $9D95                  ; Start adress
+    ret
+        jr nc,start            ; ion header
+.db "TileMap!",0
+
+start:
+    ld de,$0201
+    ld (mapX),de
+    ld (cursorX),de
+    ld hl,map
+    call loadMap            ; load the tilemap so drawTilemap can use it
+main:
+    call drawTilemap
+    call drawCursor
+    call ionFastCopy
+
+    ; read keys
+    ld a,group1             ; check if [Clear] was pressed
+    call getKey
+    cp diClear
+        jr z,exit
+
+    ld hl,main
+    push hl
+    ; read in arrow keys
+    ld a,group0
+    call getKey
+    rra
+        jr nc,moveDown
+    rra
+        jr nc,moveLeft
+    rra
+        jr nc,moveRight
+    rra
+        jr nc,moveUp
+    ret
+
+moveDown:
+    ld a,(cursorY)      ; calculate the cursor's position on the screen
+    ld hl,mapY
+    sub (hl)
+    cp 4
+        call nc,moveMapDown
+    ld hl,mapHeight
+    inc a
+    cp (hl)
+        ret z
+    ld (cursorY),a
+    ret
+moveMapDown:
+    ld a,(mapHeight)
+    sub 8
+    cp (hl)
+        ret z
+    inc (hl)
+    ret
+moveLeft:
+    ld hl,mapX
+    ld a,(hl)
+    or a
+    ret z
+    dec (hl)
+    ret
+moveMapLeft:
+
+moveRight:
+    ld hl,mapX
+    ld a,(mapWidth)
+    sub 12
+    cp (hl)
+        ret z
+    inc (hl)
+    ret
+moveMapRight:
+
+moveUp:
+    ld hl,mapY
+    ld a,(hl)
+    or a
+        ret z
+    dec (hl)
+    ret
+moveMapUp:
+
+
+
+;for now, we just quit. later we might want to do some clean up before exiting
+exit:
+    ret
+
+drawCursor:
+    ld a,(cursorY)      ; calculate the cursor's position on the screen
+    ld hl,mapY
+    sub (hl)
+    ld e,a              ; save the y coordinate because a gets overwritten later in the routine
+    ld a,(cursorX)      ; now calculate the x coordinate
+    ld hl,mapX
+    sub (hl)
+    ld l,e              ; load the y coordinate into l
+    ld ix,cursor_spr    ; a = x, l = y, ix = sprite
+    jp drawSpriteXOR
+
+; loads a map and updates mapWidth and mapHeight
+; input:
+;  - hl = pointer to map
+loadMap:
+    ld de,mapWidth
+    ldi
+    ldi
+    ld (mapPtr),hl
+    ret
+
+; draws a tilemap to the graph buffer
+;inputs:
+;-none
+drawTilemap:
+; first we need to load the pointer to the tilemap
+    ld hl,(mapPtr)          ; skip width/height
+    ld de,(mapY)            ;e = mapY, d = mapWidth
+    ld b,d                  ;b = mapWidth
+    ld d,0
+    add hl,de
+    djnz $-1
+
+    ld a,(mapX)
+    ld e,a
+    add hl,de
+    ; now we load the screen info. for 8x8 sprites, b = 12 (12 columns), c = 8 (8 rows)
+    ld bc,$0C08
+drawRow_loop:
+    push bc
+    push hl
+        ld a,(hl)
+        call drawTileA   ;draw sprite
+    pop hl
+    pop bc
+    inc hl
+    djnz drawRow_loop
+    ld a,(mapWidth)
+    sub 12
+    ld e,a          ;14 = map width, later we will change this to allow maps with variable widths, 12 = number of tiles we've drawn
+    ld d,0
+    add hl,de
+    ld b,12              ;reset b to 12 because the next row will also have 12 columns
+    dec c
+    jr nz,drawRow_loop
+    ret
+
+drawTileA:
+    ld l,a
+    ld h,0
+    add hl,hl
+    add hl,hl
+    add hl,hl  ;x8
+    ld de,tile_data
+    add hl,de
+    push hl
+    pop ix
+    ;calculate y coordinate: (8-c)*8
+    ld a,8
+    sub c      ;8-c
+    ld l,a     ;l holds the y coordinate
+    ;calculate x coordinate: (12-b)*8
+    ld a,12
+    sub b      ;a = x coordinate
+
+; Draws an aligned sprite to the gbuf
+; inputs:
+;   - a = x
+;   - l = y
+;   - ix = sprite
+drawSprite:
+    call getGbufOffset
+drawSprite_loop:
+    ld a,(ix)
+    ld (hl),a
+    inc ix
+    add hl,de
+    djnz drawSprite_loop
+    ret
+
+; XORs an aligned sprite to the gbuf
+; inputs:
+;   - a = x
+;   - l = y
+;   - ix = sprite
+drawSpriteXOR:
+    call getGbufOffset
+drawSpriteXOR_loop:
+    ld a,(ix)
+    xor (hl)
+    ld (hl),a
+    inc ix
+    add hl,de
+    djnz drawSpriteXOR_loop
+    ret
+
+; calculates the offset in the gbuf
+;input:
+; a = x
+; l = y
+;output:
+; hl = gbuf offset
+; b = 8
+; de = 12
+getGbufOffset:
+    ld de,gbuf
+    add a,e
+    ld e,a
+    ld h,0
+    add hl,hl
+    add hl,hl
+    add hl,hl          ;x8 each tile is 8 pixels tall
+    ld c,l
+    ld b,h
+    add hl,hl          ;x2
+    add hl,bc          ;x3
+    add hl,hl          ;x6
+    add hl,hl          ;x12
+    add hl,de
+    ld de,12           ;width of the graph buffer (96 pixels/8 = 12)
+    ld b,8             ;each sprite has 8 rows
+    ret
+
+; inputs:
+;   - a = key group to read from
+getKey:
+    out (1),a
+    push af
+    pop af
+    in a,(1)
+    ret
+
+;sprites:
+cursor_spr:
+.db $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+
+map:
+.db 18,11
+.db 3,3,3,3,3,3,3,4,7,3,3,3,3,3,3,3,3,3
+.db 3,0,0,0,3,3,0,0,0,3,0,0,0,3,3,3,3,3
+.db 3,0,2,0,3,3,0,2,0,3,0,2,0,3,3,3,3,3
+.db 3,0,0,0,0,0,0,0,0,0,0,0,0,3,3,3,3,3
+.db 3,0,2,0,2,0,2,0,2,0,3,3,3,3,3,3,3,3
+.db 3,0,0,0,0,0,0,0,0,0,3,3,3,3,3,3,3,3
+.db 3,0,2,0,2,0,2,0,2,0,0,0,0,3,3,3,3,3
+.db 3,0,0,0,0,0,0,0,0,0,3,3,0,3,3,3,3,3
+.db 3,0,2,0,3,3,3,0,2,0,3,3,0,3,3,3,3,3
+.db 3,0,0,0,3,3,3,0,0,0,3,3,0,3,3,3,3,3
+.db 3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+
+tile_data:
+;tile 0
+.db 0,0,0,0,0,0,0,0
+;tile 1
+.db %11111111
+.db %11000001
+.db %10100101
+.db %10010001
+.db %10001001
+.db %10100101
+.db %10000011
+.db %11111111
+;tile 2
+.db 80,81,82,83,84,85,86,87
+.db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+.db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+.db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+.db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+.db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff

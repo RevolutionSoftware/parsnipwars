@@ -48,7 +48,7 @@ main:
 	ld a,group1				; check if [Clear] was pressed
 	call getKey
 	cp diClear
-	 jr z,exit
+	 jp z,exit
 
 	ld hl,main
 	push hl

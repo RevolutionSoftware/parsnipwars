@@ -86,33 +86,57 @@ moveMapDown:
 	inc (hl)
 	ret
 moveLeft:
+	ld a,(cursorX)
 	ld hl,mapX
-	ld a,(hl)
+	sub (hl)
 	or a
-	ret z
-	dec (hl)
+	call nc,moveMapLeft
+	dec a
+	ld (cursorX),a
 	ret
 moveMapLeft:
-
-moveRight:
-	ld hl,mapX
 	ld a,(mapWidth)
 	sub 12
 	cp (hl)
-		ret z
-	inc (hl)
-	ret
-moveMapRight:
-
-moveUp:
-	ld hl,mapY
-	ld a,(hl)
-	or a
-		ret z
+	ret z
 	dec (hl)
 	ret
+moveRight:
+	ld a,(cursorX)
+	ld hl,mapX
+	sub (hl)
+	cp 8
+	call nc,moveMapRight
+	ld hl,mapWidth
+	inc a
+	cp (hl)
+	ret z
+	inc a
+	ld (cursorX),a
+	ret
+moveMapRight:
+	ld a,(mapWidth)
+	sub 12
+	cp (hl)
+	ret z
+	inc (hl)
+	ret
+moveUp:
+	ld a,(cursorY)
+	ld hl,mapY
+	sub (hl)
+	or a
+	call nc,moveMapUp
+	dec a
+	ld (cursorY),a
+	ret
 moveMapUp:
-
+	ld a,(mapHeight)
+	sub 8
+	cp (hl)
+	ret z
+	dec (hl)
+	ret
 
 
 ;for now, we just quit. later we might want to do some clean up before exiting

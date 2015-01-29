@@ -86,80 +86,59 @@ moveMapDown:
 	inc (hl)
 	ret
 moveLeft:
-<<<<<<< HEAD
-	ld hl,mapX
-	ld a,(hl)
-	or a
-	ret z
-	dec (hl)
-=======
 	ld a,(cursorX)
 	ld hl,mapX
 	sub (hl)
+	cp 6
+	 call c,moveMapLeft
+	ld hl,cursorX
+	ld a,(hl)
 	or a
-	call nc,moveMapLeft
-	dec a
-	ld (cursorX),a
->>>>>>> a42e3d948d3595e6f6d7e93b14504ebf3036873f
+	 ret z
+	dec (hl)
 	ret
 moveMapLeft:
-	ld a,(mapWidth)
-	sub 12
-	cp (hl)
-	ret z
+	ld a,(hl)
+	or a
+	 ret z
 	dec (hl)
 	ret
 moveRight:
-<<<<<<< HEAD
-	ld hl,mapX
-	ld a,(mapWidth)
-	sub 12
-	cp (hl)
-		ret z
-	inc (hl)
-=======
 	ld a,(cursorX)
 	ld hl,mapX
 	sub (hl)
-	cp 8
-	call nc,moveMapRight
+	cp 6
+	 call nc,moveMapRight
+	ld a,(cursorX)
 	ld hl,mapWidth
 	inc a
 	cp (hl)
-	ret z
-	inc a
+	 ret z
 	ld (cursorX),a
->>>>>>> a42e3d948d3595e6f6d7e93b14504ebf3036873f
 	ret
 moveMapRight:
 	ld a,(mapWidth)
 	sub 12
 	cp (hl)
-	ret z
+	 ret z
 	inc (hl)
 	ret
 moveUp:
-<<<<<<< HEAD
-	ld hl,mapY
-	ld a,(hl)
-	or a
-		ret z
-	dec (hl)
-=======
 	ld a,(cursorY)
 	ld hl,mapY
 	sub (hl)
+	cp 4
+	 call c,moveMapUp
+	ld hl,cursorY
+	ld a,(hl)
 	or a
-	call nc,moveMapUp
-	dec a
-	ld (cursorY),a
->>>>>>> a42e3d948d3595e6f6d7e93b14504ebf3036873f
+	 ret z
+	dec (hl)
 	ret
 moveMapUp:
-	ld a,(mapHeight)
-	sub 8
-	cp (hl)
-	ret z
+	ld a,(hl)
+	or a
+	 ret z
 	dec (hl)
 	ret
 

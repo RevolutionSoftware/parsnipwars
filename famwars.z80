@@ -27,6 +27,7 @@ mapPtr  = mapHeight+1		;mapPtr = ¡¡2 bytes!!
 cursorX = mapPtr+2
 cursorY = cursorX+1
 neutralCtr	= cursorY+1		; increases each time we draw the map, every other frame draw neutral buildings
+keyPressed	= neutralCtr+1	; makes sure the cursor doesn't move too fast
 
 .db $BB,$6D					; Magic token
 .org $9D95					; Start adress
@@ -53,9 +54,27 @@ main:
 
 	ld hl,main				; this puts main onto the stack
 	push hl					; the next ret will put main into the pc and jump there
+
+	ld hl,keyPressed
+
 ; read in arrow keys
 	ld a,group0				; the arrow keys are in group0
 	call getKey
+
+	inc a
+	 jr nz,$+5
+		ld (hl),$FF
+		ret
+	dec a
+
+	ld e,a
+		inc (hl)
+		ld a,(hl)
+		and $3
+		 ret nz
+	ld a,e
+
+
 	rra						; down = %11111110, so rra will put a zero into carry
 	 jr nc,moveDown			; so if there was no carry, move cursor down
 	rra						; repeat with other arrow keys

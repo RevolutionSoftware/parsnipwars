@@ -34,6 +34,17 @@ readMapLoop:
 	ret
 
 loadBuilding:
+	ex de,hl				; put 
+		ld (hl),c			; save x (current column)
+		inc hl
+		ld (hl),b			; save y (current row)
+		inc hl
+		ld (hl),20			; save
+		cp 6
+		 jr nz,$+4
+			ld (hl),10
+		inc hl
+	ex de,hl
 ;blablabla
 	ret
 

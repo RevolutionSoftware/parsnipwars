@@ -16,7 +16,7 @@ tile_data:
 #include "sprites/tile_base2.bmp"		; 5
 #include "sprites/tile_city.bmp"		; 6
 #include "sprites/tile_city2.bmp"		; 7
-#include "sprites/tile_factoryb.mp"		; 8
+#include "sprites/tile_factory.bmp"		; 8
 #include "sprites/tile_factory2.bmp"	; 9
 #include "sprites/tile_village.bmp"		; 10
 #include "sprites/tile_village2.bmp"	; 11

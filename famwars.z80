@@ -26,6 +26,7 @@ mapHeight  = mapWidth+1
 mapPtr  = mapHeight+1		;mapPtr = ¡¡2 bytes!!
 cursorX = mapPtr+2
 cursorY = cursorX+1
+neutralCtr	= cursorY+1		; increases each time we draw the map, every other frame draw neutral buildings
 
 .db $BB,$6D					; Magic token
 .org $9D95					; Start adress
@@ -196,9 +197,11 @@ drawTilemap:
 ;#	- none, just make sure map variables are set
 ;######################
 ; first we need to load the pointer to the tilemap
+	ld hl,neutralCtr		;
+	inc (hl)
 	ld hl,(mapPtr)			; skip width/height
-	ld de,(mapY)			;e = mapY, d = mapWidth
-	ld b,d					;b = mapWidth
+	ld de,(mapY)			; e = mapY, d = mapWidth
+	ld b,d					; b = mapWidth
 	ld d,0
 	add hl,de
 	djnz $-1
@@ -212,6 +215,13 @@ drawRow_loop:
 	push bc
 	push hl
 		ld a,(hl)
+		bit 7,a
+		 jr z,$+12
+		 	and %0111111
+			ld hl,neutralCtr
+			bit 0,(hl)
+			 jr z,$+3
+				xor a
 		call drawTileA		;draw sprite
 	pop hl
 	pop bc

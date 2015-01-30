@@ -40,24 +40,24 @@ start:
 	ld hl,map
 	call loadMap			; load the tilemap so drawTilemap can use it
 main:
-	call drawTilemap
-	call drawCursor
-	call ionFastCopy
+	call drawTilemap		; draws our tilemap to the gbuf
+	call drawCursor			; draws the cursor over top of the gbuf
+	call ionFastCopy		; use ion's fastcopy routine to copy the gbuf to the LCD
 
-	; read keys
+; read keys
 	ld a,group1				; check if [Clear] was pressed
-	call getKey
-	cp diClear
-	 jp z,exit
+	call getKey				; opens key group stored in a and reads a value
+	cp diClear				; if [Clear] was pressed
+	 jp z,exit				; .. start the exit procedure
 
-	ld hl,main
-	push hl
-	; read in arrow keys
-	ld a,group0
+	ld hl,main				; this puts main onto the stack
+	push hl					; the next ret will put main into the pc and jump there
+; read in arrow keys
+	ld a,group0				; the arrow keys are in group0
 	call getKey
-	rra
-	 jr nc,moveDown
-	rra
+	rra						; down = %11111110, so rra will put a zero into carry
+	 jr nc,moveDown			; so if there was no carry, move cursor down
+	rra						; repeat with other arrow keys
 	 jr nc,moveLeft
 	rra
 	 jr nc,moveRight
@@ -65,27 +65,34 @@ main:
 	 jr nc,moveUp
 	ret
 
+;######################
 moveDown:
+;# moves the cursor down one tile
+;# if tile is beyond the middle of
+;# the screen, attempts to scroll map
+;######################
 	ld a,(cursorY)			; calculate the cursor's position on the screen
-	ld hl,mapY
-	sub (hl)
-	cp 4
-	 call nc,moveMapDown
-	ld a,(cursorY)			; calculate the cursor's position on the screen
-	ld hl,mapHeight
-	inc a
-	cp (hl)
-		ret z
-	ld (cursorY),a
+	ld hl,mapY				; to do this, we subtract mapY from cursorY
+	sub (hl)				; cursorY-mapY
+	cp 4					; if the cursor is in row 4 or above
+	 call nc,moveMapDown	; .. try to move the map down
+	ld a,(cursorY)			; grab the cursor's absolute Y value
+	ld hl,mapHeight			; compare that with the mapHeight
+	inc a					; we add one because map height starts at 1, not 0 like cursorY
+	cp (hl)					; if the two are equal, we're at the bottom of the map
+	 ret z					; .. so we should quit
+	ld (cursorY),a			; otherwise, update cursorY and return to main
 	ret
-moveMapDown:
-	ld a,(mapHeight)
-	sub 8
-	cp (hl)
-	 ret z
-	inc (hl)
+moveMapDown:				; now check if we've reached the edge of the map
+	ld a,(mapHeight)		; we need to compare mapY to mapHeight-8
+	sub 8					; subtract 8 because there are 8 rows on screen
+	cp (hl)					; if mapY = mapHeight-8, we've reached the bottom of the screen
+	 ret z					; .. and should quit
+	inc (hl)				; otherwise, increase mapY (remember, hl = mapY from above)
 	ret
+;######################
 moveLeft:
+;######################
 	ld a,(cursorX)
 	ld hl,mapX
 	sub (hl)
@@ -103,7 +110,12 @@ moveMapLeft:
 	 ret z
 	dec (hl)
 	ret
+;######################
 moveRight:
+;# moves the cursor right one tile
+;# basically the same idea as moveDown
+;# but with X values instead of Y
+;######################
 	ld a,(cursorX)
 	ld hl,mapX
 	sub (hl)
@@ -123,7 +135,9 @@ moveMapRight:
 	 ret z
 	inc (hl)
 	ret
+;######################
 moveUp:
+;######################
 	ld a,(cursorY)
 	ld hl,mapY
 	sub (hl)
@@ -147,7 +161,9 @@ moveMapUp:
 exit:
 	ret
 
+;######################
 drawCursor:
+;######################
 	ld a,(cursorY)		; calculate the cursor's position on the screen
 	ld hl,mapY
 	sub (hl)
@@ -159,20 +175,26 @@ drawCursor:
 	ld ix,cursor_spr	; a = x, l = y, ix = sprite
 	jp drawSpriteXOR
 
-; loads a map and updates mapWidth and mapHeight
-; input:
-;  - hl = pointer to map
+;######################
 loadMap:
+;# loads a map and updates mapWidth and mapHeight
+;# input:
+;#	- hl = pointer to map
+;# output:
+;#	- mapWidth and mapHeight are set
+;######################
 	ld de,mapWidth
 	ldi
 	ldi
 	ld (mapPtr),hl
 	ret
 
-; draws a tilemap to the graph buffer
-;inputs:
-;-none
+;######################
 drawTilemap:
+;# draws a tilemap to the graph buffer
+;# inputs:
+;#	- none, just make sure map variables are set
+;######################
 ; first we need to load the pointer to the tilemap
 	ld hl,(mapPtr)			; skip width/height
 	ld de,(mapY)			;e = mapY, d = mapWidth
@@ -205,7 +227,9 @@ drawRow_loop:
 	 jr nz,drawRow_loop
 	ret
 
+;######################
 drawTileA:
+;######################
 	ld l,a
 	ld h,0
 	add hl,hl
@@ -217,77 +241,87 @@ drawTileA:
 	pop ix
 ;calculate y coordinate: (8-c)*8
 	ld a,8
-	sub c					;8-c
-	ld l,a					;l holds the y coordinate
+	sub c					; 8-c
+	ld l,a					; l holds the y coordinate
 ;calculate x coordinate: (12-b)*8
 	ld a,12
-	sub b					;a = x coordinate
+	sub b					; a = x coordinate
 
-; Draws an aligned sprite to the gbuf
-; inputs:
-;   - a = x
-;   - l = y
-;   - ix = sprite
+;######################
 drawSprite:
-	call getGbufOffset
+;# Draws an aligned sprite to the gbuf
+;# inputs:
+;#	- a = x (tile position: 0-11)
+;#	- l = y (tile position: 0-7)
+;#	- ix = sprite
+;######################
+	call getGbufOffset		; gets the gbuf offset in hl and prepares b/de for sprite loop
 drawSprite_loop:
-	ld a,(ix)
-	ld (hl),a
-	inc ix
-	add hl,de
-	djnz drawSprite_loop
+	ld a,(ix)				; read sprite byte
+	ld (hl),a				; overwrite the value in gbuf with sprite byte
+	inc ix					; move to next byte in sprite
+	add hl,de				; move to next row in gbuf (de = 12)
+	djnz drawSprite_loop	; repeat b times (8)
 	ret
 
-; XORs an aligned sprite to the gbuf
-; inputs:
-;   - a = x
-;   - l = y
-;   - ix = sprite
+;######################
 drawSpriteXOR:
-	call getGbufOffset
+;# XORs a tile-aligned sprite to the gbuf
+;# inputs:
+;#	- a = x coord
+;#	- l = y coord
+;#	- ix = sprite
+;######################
+	call getGbufOffset		; prepare hl, b, and de for sprite loop
 drawSpriteXOR_loop:
-	ld a,(ix)
-	xor (hl)
-	ld (hl),a
-	inc ix
-	add hl,de
-	djnz drawSpriteXOR_loop
+	ld a,(ix)				; sprite byte
+	xor (hl)				; xor that with value in gbuf
+	ld (hl),a				; store XOR'd sprite back to gbuf
+	inc ix					; next sprite byte
+	add hl,de				; next gbuf row
+	djnz drawSpriteXOR_loop	; repeat b times
 	ret
 
-; calculates the offset in the gbuf
-;input:
-; a = x
-; l = y
-;output:
-; hl = gbuf offset
-; b = 8
-; de = 12
+;######################
 getGbufOffset:
-	ld de,gbuf
-	add a,e
-	ld e,a
-	ld h,0
-	add hl,hl
-	add hl,hl
-	add hl,hl			;x8 each tile is 8 pixels tall
-	ld c,l
+;# calculates the offset in the gbuf
+;#input:
+;#	- a = x tile
+;#	- l = y tile
+;# output:
+;#	- hl = gbuf offset
+;#	- b = 8
+;#	- de = 12
+;######################
+	ld de,gbuf				; add x offset to gbuf
+	add a,e					; a will never be > 12
+	ld e,a					; .. so there's no risk of overflow
+	ld h,0					; clear MSB of hl
+	add hl,hl				; convert y tile row into gbuf row: tileY*spriteHeight*gbufWidth
+	add hl,hl				; .. multiply by 8 (spriteHeight)
+	add hl,hl				; x8 each tile is 8 pixels tall
+	ld c,l					; essentially ld bc,hl (instruction doesn't exist)
 	ld b,h
-	add hl,hl			;x2
-	add hl,bc			;x3
-	add hl,hl			;x6
-	add hl,hl			;x12
-	add hl,de
-	ld de,12			;width of the graph buffer (96 pixels/8 = 12)
-	ld b,8				;each sprite has 8 rows
+	add hl,hl				; x2
+	add hl,bc				; x3
+	add hl,hl				; x6
+	add hl,hl				; x12 (gbufWidth)
+	add hl,de				; add to gbuf, hl now = correct offset in gbuf
+	ld de,12				; width of the graph buffer (96 pixels/8 = 12)
+	ld b,8					; each sprite has 8 rows
 	ret
 
-; inputs:
-;   - a = key group to read from
+;######################
 getKey:
-	out (1),a
-	push af
-	pop af
-	in a,(1)
+;# input:
+;#	- a = key group to read from
+;# output:
+;#	- a = keys pressed ($FF = no keys pressed)
+;######################
+	out (1),a				; opens the key group we want to read from
+	push af					; a delay for 84+/SE calcs
+	pop af					; (unnecessary for 83+/SE calcs)
+	in a,(1)				; read value from key port
 	ret
 
 ;sprites:

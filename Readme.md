@@ -11,6 +11,8 @@
 #### Buildings:
 * three states: player, neutral, enemy
 * occupying can continue unless you leave a tile or die
+* your buildings heal 2 HP and refuel (if it's a building that produces that unit)
+* cities can heal land units (infantry?)
 
 #### Buildings and the Tilemap:
 * buildings will be defined as player, enemy, or neutral in tilemap
@@ -41,6 +43,7 @@
 * whether can attack air and land
 * terrain limitations (trees, mountains, etc.)
 * strengths/weaknesses against other units
+* experience (?) (based on damage dealt, not damage received)
 
 #### A Unit's Turn
 * give option to move a unit
@@ -51,13 +54,25 @@
 #### Unit Movement (some ideas)
 * provide a range of tiles as in the original game
 * limit the player to a certain number of tiles, eg. walking 5 tiles in any direction (UUULU or DRDDL)
+* mechanical units require fuel
+
+#### Terrain Data
+* provides defense (0-5)
+* some terrain require multiple movement points
 
 #### Occupying a Building
 * when a unit lands on a building, give the option to occupy or not
-* decrease building's HP by 1, if HP = 0, occupy
-* when occupying a building, change sprite to player's team
+* decrease building's HP by unit's HP, if HP = 0, occupy (eg if unit has 10 HP, decrease by 10, if unit has 3 HP, decrease by 3)
+* after occupying a building, change sprite to player's team
 
 #### Attacking Other Players
+* units attack at the same time (two infantry units will both deal 5 dmg, rather than attacker deals 5, attacked dealing 2-3)
 
 #### AI
 * MWAHAHAHAHA
+
+
+Lots of good data here:
+www.gamefaqs.com/snes/577448-super-famicom-wars/faqs/16941
+----- 3.2  UNITS INFORMATION -----
+----- 3.3  TERRAIN DATA -----

@@ -36,8 +36,9 @@ keyPressed	= neutralCtr+1	; makes sure the cursor doesn't move too fast
 .db "TileMap!",0
 
 start:
-	ld de,$0201
+	ld de,$0000
 	ld (mapX),de
+	ld de,$0201
 	ld (cursorX),de
 	ld hl,map
 	call loadMap			; load the tilemap so drawTilemap can use it
@@ -72,7 +73,6 @@ main:
 		and $3				; 0, 4, 8, 12, 16, etc. AND'd with 3 will all return 0
 		 ret nz				; if it's not a multiple of 4, don't read keys this frame
 	ld a,e					; restore keypress
-
 
 	rra						; down = %11111110, so rra will put a zero into carry
 	 jr nc,moveDown			; so if there was no carry, move cursor down
@@ -195,151 +195,6 @@ drawCursor:
 	jp drawSpriteXOR
 
 ;######################
-loadMap:
-;# loads a map and updates mapWidth and mapHeight
-;# input:
-;#	- hl = pointer to map
-;# output:
-;#	- mapWidth and mapHeight are set
-;######################
-	ld de,mapWidth
-	ldi
-	ldi
-	ld (mapPtr),hl
-	ret
-
-;######################
-drawTilemap:
-;# draws a tilemap to the graph buffer
-;# inputs:
-;#	- none, just make sure map variables are set
-;######################
-; first we need to load the pointer to the tilemap
-	ld hl,neutralCtr		;
-	inc (hl)
-	ld hl,(mapPtr)			; skip width/height
-	ld de,(mapY)			; e = mapY, d = mapWidth
-	ld b,d					; b = mapWidth
-	ld d,0
-	add hl,de
-	djnz $-1
-
-	ld a,(mapX)
-	ld e,a
-	add hl,de
-	; now we load the screen info. for 8x8 sprites, b = 12 (12 columns), c = 8 (8 rows)
-	ld bc,$0C08
-drawRow_loop:
-	push bc
-	push hl
-		ld a,(hl)
-		bit 7,a
-		 jr z,$+12
-		 	and %0111111
-			ld hl,neutralCtr
-			bit 0,(hl)
-			 jr z,$+3
-				xor a
-		call drawTileA		;draw sprite
-	pop hl
-	pop bc
-	inc hl
-	djnz drawRow_loop
-	ld a,(mapWidth)
-	sub 12
-	ld e,a					;14 = map width, later we will change this to allow maps with variable widths, 12 = number of tiles we've drawn
-	ld d,0
-	add hl,de
-	ld b,12					;reset b to 12 because the next row will also have 12 columns
-	dec c
-	 jr nz,drawRow_loop
-	ret
-
-;######################
-drawTileA:
-;######################
-	ld l,a
-	ld h,0
-	add hl,hl
-	add hl,hl
-	add hl,hl  ;x8
-	ld de,tile_data
-	add hl,de
-	push hl
-	pop ix
-;calculate y coordinate: (8-c)*8
-	ld a,8
-	sub c					; 8-c
-	ld l,a					; l holds the y coordinate
-;calculate x coordinate: (12-b)*8
-	ld a,12
-	sub b					; a = x coordinate
-
-;######################
-drawSprite:
-;# Draws an aligned sprite to the gbuf
-;# inputs:
-;#	- a = x (tile position: 0-11)
-;#	- l = y (tile position: 0-7)
-;#	- ix = sprite
-;######################
-	call getGbufOffset		; gets the gbuf offset in hl and prepares b/de for sprite loop
-drawSprite_loop:
-	ld a,(ix)				; read sprite byte
-	ld (hl),a				; overwrite the value in gbuf with sprite byte
-	inc ix					; move to next byte in sprite
-	add hl,de				; move to next row in gbuf (de = 12)
-	djnz drawSprite_loop	; repeat b times (8)
-	ret
-
-;######################
-drawSpriteXOR:
-;# XORs a tile-aligned sprite to the gbuf
-;# inputs:
-;#	- a = x coord
-;#	- l = y coord
-;#	- ix = sprite
-;######################
-	call getGbufOffset		; prepare hl, b, and de for sprite loop
-drawSpriteXOR_loop:
-	ld a,(ix)				; sprite byte
-	xor (hl)				; xor that with value in gbuf
-	ld (hl),a				; store XOR'd sprite back to gbuf
-	inc ix					; next sprite byte
-	add hl,de				; next gbuf row
-	djnz drawSpriteXOR_loop	; repeat b times
-	ret
-
-;######################
-getGbufOffset:
-;# calculates the offset in the gbuf
-;#input:
-;#	- a = x tile
-;#	- l = y tile
-;# output:
-;#	- hl = gbuf offset
-;#	- b = 8
-;#	- de = 12
-;######################
-	ld de,gbuf				; add x offset to gbuf
-	add a,e					; a will never be > 12
-	ld e,a					; .. so there's no risk of overflow
-	ld h,0					; clear MSB of hl
-	add hl,hl				; convert y tile row into gbuf row: tileY*spriteHeight*gbufWidth
-	add hl,hl				; .. multiply by 8 (spriteHeight)
-	add hl,hl				; x8 each tile is 8 pixels tall
-	ld c,l					; essentially ld bc,hl (instruction doesn't exist)
-	ld b,h
-	add hl,hl				; x2
-	add hl,bc				; x3
-	add hl,hl				; x6
-	add hl,hl				; x12 (gbufWidth)
-	add hl,de				; add to gbuf, hl now = correct offset in gbuf
-	ld de,12				; width of the graph buffer (96 pixels/8 = 12)
-	ld b,8					; each sprite has 8 rows
-	ret
-
-;######################
 getKey:
 ;# input:
 ;#	- a = key group to read from
@@ -352,43 +207,12 @@ getKey:
 	in a,(1)				; read value from key port
 	ret
 
+
+#include "tilemap.z80"
+
 ;sprites:
 cursor_spr:
 .db $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
 
-map:
-.db 18,11
-.db 1,1,1,1,1,1,1,4,7,1,1,1,1,1,1,1,1,1
-.db 1,0,0,0,1,1,0,0,0,1,0,0,0,0,0,0,0,1
-.db 1,0,2,0,1,1,0,9,0,1,0,4,0,0,0,0,0,10
-.db 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-.db 1,0,0,0,0,0,0,0,8,0,0,0,0,0,0,0,0,0
-.db 1,0,0,$8A,0,$86,0,0,0,0,0,0,0,0,0,0,0,11
-.db 1,0,0,0,0,0,0,0,7,0,0,0,0,1,1,1,0,0
-.db 1,0,0,0,0,0,0,0,0,0,4,0,0,1,1,1,0,0
-.db 1,0,3,0,4,0,5,0,6,0,0,0,0,1,1,1,0,0
-.db 1,0,0,0,0,0,0,0,0,0,4,0,0,0,0,0,0,0
-.db 1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,0
-
-tile_data:
-;tile 0
-.db 0,0,0,0,0,0,0,0
-;tile 1
-.db %11111111
-.db %11000001
-.db %10100101
-.db %10010001
-.db %10001001
-.db %10100101
-.db %10000011
-.db %11111111
-#include "sprites/tile_airport.bmp"		; 2
-#include "sprites/tile_airport2.bmp"	; 3
-#include "sprites/tile_base.bmp"		; 4
-#include "sprites/tile_base2.bmp"		; 5
-#include "sprites/tile_city.bmp"		; 6
-#include "sprites/tile_city2.bmp"		; 7
-#include "sprites/tile_factory.bmp"		; 8
-#include "sprites/tile_factory2.bmp"	; 9
-#include "sprites/tile_village.bmp"		; 10
-#include "sprites/tile_village2.bmp"	; 11
+#include "maps.inc"
+#include "tiles.inc"

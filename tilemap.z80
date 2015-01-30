@@ -10,6 +10,31 @@ loadMap:
 	ldi
 	ldi
 	ld (mapPtr),hl
+;right now hl points to the map data
+	ld bc,0					; c = current column, b = current row
+	ld de,buildingArray		; where buildings are stored (HP, etc.)
+readMapLoop:
+	push hl
+		ld a,(hl)
+		and $7F				; clear out bit 7
+		sub 2
+		cp 12-2				; check if sprite is between tile_airport and tile_village2
+		 call c,loadBuilding
+	pop hl
+	inc hl
+	inc c					; increase column
+	ld a,(mapWidth)			; check if column = map width
+	cp c					; if not, loop back
+	 jr nz,readMapLoop		; otherwise, continue to next row
+	ld c,0
+	inc b					; increase row
+	ld a,(mapHeight)		; check if row = mapHeight
+	cp b
+	 jr nz,readMapLoop
+	ret
+
+loadBuilding:
+;blablabla
 	ret
 
 ;######################

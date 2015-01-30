@@ -29,6 +29,8 @@ cursorY = cursorX+1
 neutralCtr	= cursorY+1		; increases each time we draw the map, every other frame draw neutral buildings
 keyPressed	= neutralCtr+1	; makes sure the cursor doesn't move too fast
 
+buildingArray	= saferam1+200	; dedicate at least 150 bytes for now
+
 .db $BB,$6D					; Magic token
 .org $9D95					; Start adress
 	ret

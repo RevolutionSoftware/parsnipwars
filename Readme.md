@@ -2,19 +2,19 @@
 # Famicom Wars (Simplified) #
 #############################
 
-#### Mechanics/ideas:
+#### Mechanics/ideas
 * airports build airplanes
 * factories build tanks/soldiers
 * all owned buildings give you gold each round
 * tall buildings take two turns to occupy, short buildings take one turn
 
-#### Buildings:
+#### Buildings
 * three states: player, neutral, enemy
 * occupying can continue unless you leave a tile or die
 * your buildings heal 2 HP and refuel (if it's a building that produces that unit)
 * cities can heal land units (infantry?)
 
-#### Buildings and the Tilemap:
+#### Buildings and the Tilemap
 * buildings will be defined as player, enemy, or neutral in tilemap
 * neutral buildings (village/city) will have the same tile id as player buildings, but with bit 7 set
 * neutral buildings will be drawn every other frame (to distinguish from player buildings)

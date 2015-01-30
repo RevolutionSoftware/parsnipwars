@@ -28,6 +28,7 @@ cursorX = mapPtr+2
 cursorY = cursorX+1
 neutralCtr	= cursorY+1		; increases each time we draw the map, every other frame draw neutral buildings
 keyPressed	= neutralCtr+1	; makes sure the cursor doesn't move too fast
+numBuildings = keyPressed+1	; contains the number of buildings in a map
 
 buildingArray	= saferam1+200	; dedicate at least 150 bytes for now
 

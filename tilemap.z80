@@ -11,6 +11,8 @@ loadMap:
 	ldi
 	ld (mapPtr),hl
 ;right now hl points to the map data
+	xor a
+	ld (numBuildings),a		; reset the number of buildings in the map
 	ld bc,0					; c = current column, b = current row
 	ld de,buildingArray		; where buildings are stored (HP, etc.)
 readMapLoop:
@@ -34,15 +36,17 @@ readMapLoop:
 	ret
 
 loadBuilding:
-	ex de,hl				; put 
+	ld hl,numBuildings
+	inc (hl)				; add one to numBuildings
+	ex de,hl				; put buildingArray into hl for easier use
 		ld (hl),c			; save x (current column)
 		inc hl
 		ld (hl),b			; save y (current row)
 		inc hl
-		ld (hl),20			; save
+		ld (hl),20			; save building's HP
 		cp 6
 		 jr nz,$+4
-			ld (hl),10
+			ld (hl),10		; 10 if it's a village
 		inc hl
 	ex de,hl
 ;blablabla

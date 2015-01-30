@@ -187,7 +187,7 @@ exit:
 drawCursor:
 ;######################
 	ld a,(neutralCtr)
-	and $1
+	and $3
 	 ret z
 	ld a,(cursorY)		; calculate the cursor's position on the screen
 	ld hl,mapY

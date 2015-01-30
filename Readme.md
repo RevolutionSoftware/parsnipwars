@@ -40,6 +40,7 @@
 * movement range
 * whether can attack air and land
 * terrain limitations (trees, mountains, etc.)
+* strengths/weaknesses against other units
 
 #### A Unit's Turn
 * give option to move a unit

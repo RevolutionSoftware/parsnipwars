@@ -186,6 +186,9 @@ exit:
 ;######################
 drawCursor:
 ;######################
+	ld a,(neutralCtr)
+	and $1
+	 ret z
 	ld a,(cursorY)		; calculate the cursor's position on the screen
 	ld hl,mapY
 	sub (hl)
@@ -215,7 +218,14 @@ getKey:
 
 ;sprites:
 cursor_spr:
-.db $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+.db %11100111
+.db %10000001
+.db %10000001
+.db %00000000
+.db %00000000
+.db %10000001
+.db %10000001
+.db %11100111
 
 #include "maps.inc"
 #include "tiles.inc"

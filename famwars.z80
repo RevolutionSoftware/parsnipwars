@@ -39,6 +39,7 @@ buildingArray	= saferam1+200	; dedicate at least 150 bytes for now
 .db "TileMap!",0
 
 start:
+	di
 	ld de,$0000
 	ld (mapX),de
 	ld de,$0201
@@ -212,6 +213,23 @@ getKey:
 	pop af					; (unnecessary for 83+/SE calcs)
 	in a,(1)				; read value from key port
 	ret
+
+; a should hold the value of the key you pressed
+pause:
+	call releaseKeys
+pause_loop:
+	xor a
+	call getKey
+	ld b,a
+	inc a
+	 jr z,pause_loop
+releaseKeys:
+	xor a
+	call getKey
+	inc a
+	 jr nz,releaseKeys
+	ret
+
 
 
 #include "tilemap.z80"

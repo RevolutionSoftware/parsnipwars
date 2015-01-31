@@ -39,12 +39,6 @@ buildingArray	= saferam1+200	; dedicate at least 150 bytes for now
 .db "TileMap!",0
 
 start:
-    ld de,$0000
-    ld bc,$0704
-    call drawRectangle
-    call ionFastCopy
-    jr $
-	;;; the old start began here ;;;
 	ld de,$0000
 	ld (mapX),de
 	ld de,$0201

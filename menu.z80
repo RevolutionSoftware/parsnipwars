@@ -1,0 +1,42 @@
+;;;menu.z80
+
+drawRectangle:
+; first find position in gbuf
+    ld a,e                ;x
+    ld l,d                ;y
+    push bc
+    	call getGbufOffset
+    pop bc                ; c = width, b = height of rectangle
+    ld a,%01111111          ; outer pattern (draw %01111111 on the left, %11111110 on right)
+    ld e,$FF                ; inner pattern: solid line
+    call rectangleRow       ; draw the top row   
+
+    
+drawRectangleMiddle:
+    ld a,%10000000
+    ld e,%00000000
+    call rectangleRow
+    djnz drawRectangleMiddle
+    ld a,%01111111
+    ld e,$FF
+
+;a = outer byte
+;e = inner byte
+rectangleRow:
+    push bc
+    	ld (hl),a            ; load a into the address of hl, which is getGbufOffset
+    	inc hl
+    	ld b,c
+rectangleRow_loop:
+    	ld (hl),e
+    	inc hl
+    	djnz rectangleRow_loop
+    	rlca ; rotate left through carry accumulator
+    	ld (hl),a
+    pop bc
+    ld a,11
+    sub c
+    ld d,0
+    ld e,a
+    add hl,de
+    ret

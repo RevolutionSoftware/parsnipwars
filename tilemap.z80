@@ -127,7 +127,7 @@ drawSprite:
 ;#	- l = y (tile position: 0-7)
 ;#	- ix = sprite
 ;######################
-	call getGbufOffset		; gets the gbuf offset in hl and prepares b/de for sprite loop
+	call getGbufOffsetTile	; gets the gbuf offset in hl and prepares b/de for sprite loop
 drawSprite_loop:
 	ld a,(ix)				; read sprite byte
 	ld (hl),a				; overwrite the value in gbuf with sprite byte
@@ -144,7 +144,7 @@ drawSpriteXOR:
 ;#	- l = y coord
 ;#	- ix = sprite
 ;######################
-	call getGbufOffset		; prepare hl, b, and de for sprite loop
+	call getGbufOffsetTile	; prepare hl, b, and de for sprite loop
 drawSpriteXOR_loop:
 	ld a,(ix)				; sprite byte
 	xor (hl)				; xor that with value in gbuf
@@ -154,11 +154,9 @@ drawSpriteXOR_loop:
 	djnz drawSpriteXOR_loop	; repeat b times
 	ret
 
-#comment
-
 ;######################
-getGbufOffset:
-;# calculates the offset in the gbuf
+getGbufOffsetTile:
+;# calculates the tile offset in the gbuf
 ;#input:
 ;#	- a = x tile
 ;#	- l = y tile
@@ -185,7 +183,6 @@ getGbufOffset:
 	ld b,8					; each sprite has 8 rows
 	ret
 
-#endcomment
 ;######################
 getGbufOffset:
 ;# calculates the offset in the gbuf

@@ -154,6 +154,8 @@ drawSpriteXOR_loop:
 	djnz drawSpriteXOR_loop	; repeat b times
 	ret
 
+#comment
+
 ;######################
 getGbufOffset:
 ;# calculates the offset in the gbuf
@@ -181,4 +183,29 @@ getGbufOffset:
 	add hl,de				; add to gbuf, hl now = correct offset in gbuf
 	ld de,12				; width of the graph buffer (96 pixels/8 = 12)
 	ld b,8					; each sprite has 8 rows
+	ret
+
+#endcomment
+;######################
+getGbufOffset:
+;# calculates the offset in the gbuf
+;#input:
+;#	- a = x tile
+;#	- l = y tile
+;# output:
+;#	- hl = gbuf offset
+;#	- b = 8
+;#	- de = 12
+;######################
+	ld de,gbuf				; add x offset to gbuf
+	add a,e					; a will never be > 12
+	ld e,a					; .. so there's no risk of overflow
+	ld h,0					; clear MSB of hl
+	ld c,l					; essentially ld bc,hl (instruction doesn't exist)
+	ld b,h
+	add hl,hl				; x2
+	add hl,bc				; x3
+	add hl,hl				; x6
+	add hl,hl				; x12 (gbufWidth)
+	add hl,de				; add to gbuf, hl now = correct offset in gbuf
 	ret

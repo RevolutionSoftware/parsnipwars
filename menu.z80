@@ -1,6 +1,33 @@
 ;;;menu.z80
 loadMenu:
-	ret
+    ld bc,(cursorX)     ;c = x, b = y
+    call getTile
+    ld a,(hl)
+    jr $
+; hl points to tile position
+    ret
+
+; Input:
+; X = c, Y = b
+; Output: tile in tilemap - hl
+getTile:
+    ld hl,(mapWidth)
+    call multBL
+    add hl,bc
+    ld de,(mapPtr)
+    add hl,de
+    ret
+
+; multiplies HL=B*L
+multBL:
+    ld e,l          ; ld de,hl
+    ld d,0
+    ld h,d          ; clear out upper byte of HL
+    ld l,d
+    add hl,de       ; hl+de b times
+    djnz $-1
+    ret
+
 ;######################
 drawRectangle:
 ;# draws an outlined rectangle

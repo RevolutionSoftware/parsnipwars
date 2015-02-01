@@ -1,42 +1,43 @@
 ;;;menu.z80
-
+;######################
 drawRectangle:
-; first find position in gbuf
-    ld a,e                ;x
-    ld l,d                ;y
-    push bc
-    	call getGbufOffset
-    pop bc                ; c = width, b = height of rectangle
-    ld a,%01111111          ; outer pattern (draw %01111111 on the left, %11111110 on right)
-    ld e,$FF                ; inner pattern: solid line
-    call rectangleRow       ; draw the top row   
-
-    
+;# draws an outlined rectangle
+;# input:
+;#	- de = starting x/y (de = $YYXX)
+;#	- bc = width (in bytes) and height (pixels): $HHWW
+;######################
+	ld a,e						; x
+	ld l,d						; y
+	push bc						; save width/height
+		call getGbufOffset		; first find position in gbuf
+	pop bc						; c = width, b = height of rectangle
+	ld a,%01111111				; outer pattern (draw %01111111 on the left, %11111110 on right)
+	ld e,$FF					; inner pattern: solid line
+	call rectangleRow			; draw the top row   
 drawRectangleMiddle:
-    ld a,%10000000
-    ld e,%00000000
-    call rectangleRow
-    djnz drawRectangleMiddle
-    ld a,%01111111
-    ld e,$FF
-
+	ld a,%10000000				; %10000000 on left, %00000001 on right
+	ld e,%00000000				; erase what's inside
+	call rectangleRow			; draw the row
+	djnz drawRectangleMiddle	; repeat rectangleHeight times
+	ld a,%01111111				; now draw the bottom row
+	ld e,$FF					; a solid line
 ;a = outer byte
 ;e = inner byte
 rectangleRow:
-    push bc
-    	ld (hl),a            ; load a into the address of hl, which is getGbufOffset
-    	inc hl
-    	ld b,c
+	push bc
+		ld (hl),a				; outer pattern into the address of hl
+		inc hl					; next byte in gbuf
+		ld b,c					; b = width
 rectangleRow_loop:
-    	ld (hl),e
-    	inc hl
-    	djnz rectangleRow_loop
-    	rlca ; rotate left through carry accumulator
-    	ld (hl),a
-    pop bc
-    ld a,11
-    sub c
-    ld d,0
-    ld e,a
-    add hl,de
-    ret
+		ld (hl),e				; store inner pattern ($FF or $00)
+		inc hl					; next byte
+		djnz rectangleRow_loop	; repeat
+		rlca					; rotate outer byte (rotate left through carry accumulator)
+		ld (hl),a				; save right side of rectangle
+	pop bc						; restore width/height
+	ld a,11
+	sub c						; c actually = width -1, since the first byte is drawn outside of the loop
+	ld d,0
+	ld e,a
+	add hl,de					; add offset to gbuf (next row)
+	ret

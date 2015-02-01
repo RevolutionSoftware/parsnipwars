@@ -1,4 +1,6 @@
 ;;;menu.z80
+loadMenu:
+	ret
 ;######################
 drawRectangle:
 ;# draws an outlined rectangle

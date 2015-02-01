@@ -19,6 +19,9 @@ diClear = %10111111
 group2  = %11111011
 ;etc.
 
+group6  = %10111111
+di2nd	= %11011111
+
 mapX	= saferam1
 mapY	= mapX+1
 mapWidth= mapY+1
@@ -59,6 +62,12 @@ main:
 
 	ld hl,main				; this puts main onto the stack
 	push hl					; the next ret will put main into the pc and jump there
+
+; is di2nd pressed?
+	ld a,group6
+	call getKey
+	cp di2nd
+	jp z,loadMenu
 
 ; read in arrow keys
 	ld a,group0				; the arrow keys are in group0

@@ -76,3 +76,6 @@ Lots of good data here:
 www.gamefaqs.com/snes/577448-super-famicom-wars/faqs/16941
 ----- 3.2  UNITS INFORMATION -----
 ----- 3.3  TERRAIN DATA -----
+
+#### Trello Board
+[Famwars Board] (https://trello.com/b/oAUr92Xy/famwars)

@@ -9,4 +9,3 @@ terrainData		.equ buildingData+4
 
 getData:
 	ret
-#include "arraydata.inc"

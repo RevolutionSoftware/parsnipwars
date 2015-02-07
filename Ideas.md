@@ -38,7 +38,8 @@
 * current x/y ?
 
 #### Unit optimization ideas
-* Say we have 6 different unittypes (2 soldiers, 2 tanks and 2 airplanes) per faction (that's what we currently have), then we can set the 8th bit (%10000000) to sign which faction the unit belongs to.
+* Say we have 6 different unit types (2 soldiers, 2 tanks and 2 airplanes) per faction (that's what we currently have), then we can set the 8th bit (%10000000) to sign which faction the unit belongs to.
+* We could also make different combinations with the bits to have more than 6 different unit types, like: %00000011 for a third soldier unit, %00010011 for a tank that is good against units (these aren't suggestions just examples).
 
 #### Base Unit Data
 * max HP

@@ -37,6 +37,9 @@
 * starting x/y ? (some way to track how far a unit has walked)
 * current x/y ?
 
+#### Unit optimization ideas
+* Say we have 6 different unittypes (2 soldiers, 2 tanks and 2 airplanes) per faction (that's what we currently have), then we can set the 8th bit (%10000000) to sign which faction the unit belongs to.
+
 #### Base Unit Data
 * max HP
 * movement range

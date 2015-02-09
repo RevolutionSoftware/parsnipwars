@@ -3,7 +3,7 @@ loadMenu:
     ld bc,(cursorX)     ;c = x, b = y
     call getTile
     ld a,(hl)
-    jr $
+;    jr $ ; This halts/freeze the game
 ; hl points to tile position
     ret
 
@@ -24,8 +24,9 @@ multBL:
     ld d,0
     ld h,d          ; clear out upper byte of HL
     ld l,d
+_:
     add hl,de       ; hl+de b times
-    djnz $-1
+    djnz -_
     ret
 
 ;######################

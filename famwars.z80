@@ -75,9 +75,11 @@ main:
 
 	ld hl,keyPressed		; this holds whether or not a key was pressed
 	inc a					; this checks if a key was pressed
-	 jr nz,$+5				; if no key was pressed, z will be set
+	 jr nz,+_
+;	 jr nz,$+5				; if no key was pressed, z will be set
 		ld (hl),$FF			; .. and we want to reset keyPressed to $FF
 		ret					; .. and quit
+_:
 	dec a					; to compensate for the +1
 
 	ld e,a					; save a, which holds our keypress

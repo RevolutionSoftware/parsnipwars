@@ -45,8 +45,9 @@ loadBuilding:
 		inc hl
 		ld (hl),20			; save building's HP
 		cp 6
-		 jr nz,$+4
+		 jr nz,+_			; jr nz, $ + 4
 			ld (hl),10		; 10 if it's a village
+_:
 		inc hl
 	ex de,hl
 ;blablabla
@@ -65,8 +66,9 @@ drawTilemap:
 	ld de,(mapY)			; e = mapY, d = mapWidth
 	ld b,d					; b = mapWidth
 	ld d,0
+_:	
 	add hl,de
-	djnz $-1
+	djnz -_				; djnz $ - 1
 
 	ld a,(mapX)
 	ld e,a
@@ -82,9 +84,10 @@ drawRow_loop:
 		 	and %0111111
 			ld hl,neutralCtr
 			bit 0,(hl)
-			 jr z,$+3
+			 jr z,+_		;jr z, $ + 3
 				xor a
 		call drawTileA		;draw sprite
+_:
 	pop hl
 	pop bc
 	inc hl

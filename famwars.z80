@@ -67,7 +67,7 @@ main:
 	ld a,group6
 	call getKey
 	cp di2nd
-	jp z,loadMenu
+	 jp z,loadMenu
 
 ; read in arrow keys
 	ld a,group0				; the arrow keys are in group0

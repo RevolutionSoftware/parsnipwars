@@ -80,12 +80,13 @@ drawRow_loop:
 	push hl
 		ld a, (hl)
 		bit 7, a
-		 jr z, $ + 12
+		 jr z, +_
 		 	and %0111111
 			ld hl, neutralCtr
 			bit 0, (hl)
-			 jr z, +_		;jr z, $ + 3
+			 jr z, ++_		;jr z, $ + 3
 				xor a
+_:
 		call drawTileA		;draw sprite
 _:
 	pop hl

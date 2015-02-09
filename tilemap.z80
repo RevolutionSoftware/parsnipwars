@@ -6,50 +6,50 @@ loadMap:
 ;# output:
 ;#	- mapWidth and mapHeight are set
 ;######################
-	ld de,mapWidth
+	ld de, mapWidth
 	ldi
 	ldi
-	ld (mapPtr),hl
+	ld (mapPtr), hl
 ;right now hl points to the map data
 	xor a
-	ld (numBuildings),a		; reset the number of buildings in the map
-	ld bc,0					; c = current column, b = current row
-	ld de,buildingArray		; where buildings are stored (HP, etc.)
+	ld (numBuildings), a		; reset the number of buildings in the map
+	ld bc, 0					; c = current column, b = current row
+	ld de, buildingArray		; where buildings are stored (HP, etc.)
 readMapLoop:
 	push hl
-		ld a,(hl)
+		ld a, (hl)
 		and $7F				; clear out bit 7
 		sub 2
-		cp 12-2				; check if sprite is between tile_airport and tile_village2
-		 call c,loadBuilding
+		cp 12 - 2				; check if sprite is between tile_airport and tile_village2
+		 call c, loadBuilding
 	pop hl
 	inc hl
 	inc c					; increase column
-	ld a,(mapWidth)			; check if column = map width
+	ld a, (mapWidth)			; check if column = map width
 	cp c					; if not, loop back
-	 jr nz,readMapLoop		; otherwise, continue to next row
-	ld c,0
+	 jr nz, readMapLoop		; otherwise, continue to next row
+	ld c, 0
 	inc b					; increase row
-	ld a,(mapHeight)		; check if row = mapHeight
+	ld a, (mapHeight)		; check if row = mapHeight
 	cp b
-	 jr nz,readMapLoop
+	 jr nz, readMapLoop
 	ret
 
 loadBuilding:
-	ld hl,numBuildings
+	ld hl, numBuildings
 	inc (hl)				; add one to numBuildings
-	ex de,hl				; put buildingArray into hl for easier use
-		ld (hl),c			; save x (current column)
+	ex de, hl				; put buildingArray into hl for easier use
+		ld (hl), c			; save x (current column)
 		inc hl
-		ld (hl),b			; save y (current row)
+		ld (hl), b			; save y (current row)
 		inc hl
-		ld (hl),20			; save building's HP
+		ld (hl), 20			; save building's HP
 		cp 6
-		 jr nz,+_			; jr nz, $ + 4
-			ld (hl),10		; 10 if it's a village
+		 jr nz, +_			; jr nz, $ + 4
+			ld (hl), 10		; 10 if it's a village
 _:
 		inc hl
-	ex de,hl
+	ex de, hl
 ;blablabla
 	ret
 
@@ -60,31 +60,31 @@ drawTilemap:
 ;#	- none, just make sure map variables are set
 ;######################
 ; first we need to load the pointer to the tilemap
-	ld hl,neutralCtr		;
+	ld hl, neutralCtr		;
 	inc (hl)
-	ld hl,(mapPtr)			; skip width/height
-	ld de,(mapY)			; e = mapY, d = mapWidth
-	ld b,d					; b = mapWidth
-	ld d,0
+	ld hl, (mapPtr)			; skip width/height
+	ld de, (mapY)			; e = mapY, d = mapWidth
+	ld b, d					; b = mapWidth
+	ld d, 0
 _:	
-	add hl,de
+	add hl, de
 	djnz -_				; djnz $ - 1
 
-	ld a,(mapX)
-	ld e,a
-	add hl,de
+	ld a, (mapX)
+	ld e, a
+	add hl, de
 	; now we load the screen info. for 8x8 sprites, b = 12 (12 columns), c = 8 (8 rows)
-	ld bc,$0C08
+	ld bc, $0C08
 drawRow_loop:
 	push bc
 	push hl
-		ld a,(hl)
-		bit 7,a
-		 jr z,$+12
+		ld a, (hl)
+		bit 7, a
+		 jr z, $ + 12
 		 	and %0111111
-			ld hl,neutralCtr
-			bit 0,(hl)
-			 jr z,+_		;jr z, $ + 3
+			ld hl, neutralCtr
+			bit 0, (hl)
+			 jr z, +_		;jr z, $ + 3
 				xor a
 		call drawTileA		;draw sprite
 _:
@@ -92,34 +92,34 @@ _:
 	pop bc
 	inc hl
 	djnz drawRow_loop
-	ld a,(mapWidth)
+	ld a, (mapWidth)
 	sub 12
-	ld e,a					;14 = map width, later we will change this to allow maps with variable widths, 12 = number of tiles we've drawn
-	ld d,0
-	add hl,de
-	ld b,12					;reset b to 12 because the next row will also have 12 columns
+	ld e, a					;14 = map width, later we will change this to allow maps with variable widths, 12 = number of tiles we've drawn
+	ld d, 0
+	add hl, de
+	ld b, 12					;reset b to 12 because the next row will also have 12 columns
 	dec c
-	 jr nz,drawRow_loop
+	 jr nz, drawRow_loop
 	ret
 
 ;######################
 drawTileA:
 ;######################
-	ld l,a
-	ld h,0
-	add hl,hl
-	add hl,hl
-	add hl,hl  ;x8
-	ld de,tile_data
-	add hl,de
+	ld l, a
+	ld h, 0
+	add hl, hl
+	add hl, hl
+	add hl, hl  ;x8
+	ld de, tile_data
+	add hl, de
 	push hl
 	pop ix
 ;calculate y coordinate: (8-c)*8
-	ld a,8
+	ld a, 8
 	sub c					; 8-c
-	ld l,a					; l holds the y coordinate
+	ld l, a					; l holds the y coordinate
 ;calculate x coordinate: (12-b)*8
-	ld a,12
+	ld a, 12
 	sub b					; a = x coordinate
 
 ;######################
@@ -132,10 +132,10 @@ drawSprite:
 ;######################
 	call getGbufOffsetTile	; gets the gbuf offset in hl and prepares b/de for sprite loop
 drawSprite_loop:
-	ld a,(ix)				; read sprite byte
-	ld (hl),a				; overwrite the value in gbuf with sprite byte
+	ld a, (ix)				; read sprite byte
+	ld (hl), a				; overwrite the value in gbuf with sprite byte
 	inc ix					; move to next byte in sprite
-	add hl,de				; move to next row in gbuf (de = 12)
+	add hl, de				; move to next row in gbuf (de = 12)
 	djnz drawSprite_loop	; repeat b times (8)
 	ret
 
@@ -149,11 +149,11 @@ drawSpriteXOR:
 ;######################
 	call getGbufOffsetTile	; prepare hl, b, and de for sprite loop
 drawSpriteXOR_loop:
-	ld a,(ix)				; sprite byte
+	ld a, (ix)				; sprite byte
 	xor (hl)				; xor that with value in gbuf
-	ld (hl),a				; store XOR'd sprite back to gbuf
+	ld (hl), a				; store XOR'd sprite back to gbuf
 	inc ix					; next sprite byte
-	add hl,de				; next gbuf row
+	add hl, de				; next gbuf row
 	djnz drawSpriteXOR_loop	; repeat b times
 	ret
 
@@ -168,22 +168,22 @@ getGbufOffsetTile:
 ;#	- b = 8
 ;#	- de = 12
 ;######################
-	ld de,gbuf				; add x offset to gbuf
-	add a,e					; a will never be > 12
-	ld e,a					; .. so there's no risk of overflow
-	ld h,0					; clear MSB of hl
-	add hl,hl				; convert y tile row into gbuf row: tileY*spriteHeight*gbufWidth
-	add hl,hl				; .. multiply by 8 (spriteHeight)
-	add hl,hl				; x8 each tile is 8 pixels tall
-	ld c,l					; essentially ld bc,hl (instruction doesn't exist)
-	ld b,h
-	add hl,hl				; x2
-	add hl,bc				; x3
-	add hl,hl				; x6
-	add hl,hl				; x12 (gbufWidth)
-	add hl,de				; add to gbuf, hl now = correct offset in gbuf
-	ld de,12				; width of the graph buffer (96 pixels/8 = 12)
-	ld b,8					; each sprite has 8 rows
+	ld de, gbuf				; add x offset to gbuf
+	add a, e					; a will never be > 12
+	ld e, a					; .. so there's no risk of overflow
+	ld h, 0					; clear MSB of hl
+	add hl, hl				; convert y tile row into gbuf row: tileY*spriteHeight*gbufWidth
+	add hl, hl				; .. multiply by 8 (spriteHeight)
+	add hl, hl				; x8 each tile is 8 pixels tall
+	ld c, l					; essentially ld bc,hl (instruction doesn't exist)
+	ld b, h
+	add hl, hl				; x2
+	add hl, bc				; x3
+	add hl, hl				; x6
+	add hl, hl				; x12 (gbufWidth)
+	add hl, de				; add to gbuf, hl now = correct offset in gbuf
+	ld de, 12				; width of the graph buffer (96 pixels/8 = 12)
+	ld b, 8					; each sprite has 8 rows
 	ret
 
 ;######################
@@ -197,15 +197,15 @@ getGbufOffset:
 ;#	- b = 8
 ;#	- de = 12
 ;######################
-	ld de,gbuf				; add x offset to gbuf
-	add a,e					; a will never be > 12
-	ld e,a					; .. so there's no risk of overflow
-	ld h,0					; clear MSB of hl
-	ld c,l					; essentially ld bc,hl (instruction doesn't exist)
-	ld b,h
-	add hl,hl				; x2
-	add hl,bc				; x3
-	add hl,hl				; x6
-	add hl,hl				; x12 (gbufWidth)
-	add hl,de				; add to gbuf, hl now = correct offset in gbuf
+	ld de, gbuf				; add x offset to gbuf
+	add a, e					; a will never be > 12
+	ld e, a					; .. so there's no risk of overflow
+	ld h, 0					; clear MSB of hl
+	ld c, l					; essentially ld bc,hl (instruction doesn't exist)
+	ld b, h
+	add hl, hl				; x2
+	add hl, bc				; x3
+	add hl, hl				; x6
+	add hl, hl				; x12 (gbufWidth)
+	add hl, de				; add to gbuf, hl now = correct offset in gbuf
 	ret

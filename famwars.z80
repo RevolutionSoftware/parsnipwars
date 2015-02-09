@@ -106,7 +106,7 @@ moveDown:
 	ld a,(cursorY)			; calculate the cursor's position on the screen
 	ld hl,mapY				; to do this, we subtract mapY from cursorY
 	sub (hl)				; cursorY-mapY
-	cp 4					; if the cursor is in row 4 or above
+	cp 6					; if the cursor is in row 6 or above
 	 call nc,moveMapDown	; .. try to move the map down
 	ld a,(cursorY)			; grab the cursor's absolute Y value
 	ld hl,mapHeight			; compare that with the mapHeight
@@ -128,7 +128,7 @@ moveLeft:
 	ld a,(cursorX)
 	ld hl,mapX
 	sub (hl)
-	cp 6
+	cp 2
 	 call c,moveMapLeft
 	ld hl,cursorX
 	ld a,(hl)
@@ -151,7 +151,7 @@ moveRight:
 	ld a,(cursorX)
 	ld hl,mapX
 	sub (hl)
-	cp 6
+	cp 10
 	 call nc,moveMapRight
 	ld a,(cursorX)
 	ld hl,mapWidth
@@ -173,7 +173,7 @@ moveUp:
 	ld a,(cursorY)
 	ld hl,mapY
 	sub (hl)
-	cp 4
+	cp 2
 	 call c,moveMapUp
 	ld hl,cursorY
 	ld a,(hl)

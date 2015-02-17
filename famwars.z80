@@ -43,6 +43,7 @@ buildingArray	= saferam1 + 200	; dedicate at least 150 bytes for now
 
 start:
 	di
+	set textWrite,(iy+sGrFlags)	; vputs text drawn to gbuf
 	ld de, $0000
 	ld (mapX), de
 	ld de, $0201

@@ -1,33 +1,82 @@
-;;;menu.z80
+;;; menu.z80
+menu_txt:
+.dw $0505				; x and y coordinates of menu
+.db 4					; width of menu (in bytes: sets of 8 pixels)
+.db 3					; # of menu options
+.db "Option 1", 0
+.db "Option 2", 0
+.db "Option 3", 0
+
+; Run when user presses 2nd on the map
 loadMenu:
-    ld bc, (cursorX)     ;c = x, b = y
-    call getTile
-    ld a, (hl)
-;    jr $ ; This halts/freeze the game
+	ld bc, (cursorX)	 ; c = x, b = y
+	call getTile
 ; hl points to tile position
-    ret
+	ld a, (hl)
+; ... decide which menu to draw based on tile id / if a player has been selected
+	ld hl, menu_txt
+	ld e, (hl)			; x coord
+	inc hl
+	ld d, (hl)			; y coord
+	inc hl
+	ld c, (hl)			; width
+	inc hl
+	ld a, (hl)			; height
+	add a, a			; x2
+	add a, (hl)			; x3
+	add a, a			; x6
+	inc a				; add an extra space underneath the text
+	ld b, a				; bc = $WWHH
+drawMenu:
+	push de				; de = x/y coords of menu, we need to calculate text position
+	push hl				; hl = pointer to start of text data
+		call drawRectangle
+	pop hl
+	pop de
+	ld b,(hl)			; # menu options
+	inc hl				; start of text data
+	inc d
+	ld a,e
+	add a,a
+	add a,a
+	add a,a				; x position was byte-aligned, so we must *8
+	add a,2				; shift text 2 pixels to the right (don't draw over top of box border)
+	ld e,a
+drawMenu_loop:
+    push bc				; b holds the number of menu options
+    push de				; de holds the current text coordinates
+    	ld (penCol),de	; update pencol
+    	bcall(_VPutS)	; draw the menu item
+    pop de
+    pop bc
+    ld a,d				; add 6 to the y coordinate
+    add a,6
+    ld d,a
+    djnz drawMenu_loop	; draw all menu items
+	call ionFastCopy	; draw the menu to the screen
+	jp pause			
 
 ; Input:
 ; X = c, Y = b
 ; Output: tile in tilemap - hl
 getTile:
-    ld hl, (mapWidth)
-    call multBL
-    add hl, bc
-    ld de, (mapPtr)
-    add hl, de
-    ret
+	ld hl, (mapWidth)
+	call multBL
+	add hl, bc
+	ld de, (mapPtr)
+	add hl, de
+	ret
 
 ; multiplies HL=B*L
 multBL:
-    ld e, l          ; ld de,hl
-    ld d, 0
-    ld h, d          ; clear out upper byte of HL
-    ld l, d
+	ld e, l			; ld de,hl
+	ld d, 0
+	ld h, d			; clear out upper byte of HL
+	ld l, d
 _:
-    add hl, de       ; hl+de b times
-    djnz -_
-    ret
+	add hl, de		 ; hl+de b times
+	djnz -_
+	ret
 
 ;######################
 drawRectangle:
@@ -43,7 +92,7 @@ drawRectangle:
 	pop bc						; c = width, b = height of rectangle
 	ld a, %01111111				; outer pattern (draw %01111111 on the left, %11111110 on right)
 	ld e, $FF					; inner pattern: solid line
-	call rectangleRow			; draw the top row   
+	call rectangleRow			; draw the top row	 
 drawRectangleMiddle:
 	ld a, %10000000				; %10000000 on left, %00000001 on right
 	ld e, %00000000				; erase what's inside

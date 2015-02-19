@@ -1,0 +1,51 @@
+;######################
+drawSprite8:
+;# draws an 8x8 (XOR'd) sprite to the gbuf
+;# input:
+;#	a = x
+;#	e = y
+;#	ix = sprite data
+;#	b = sprite height (call drawSprite_var)
+;######################
+	ld b,8
+drawSprite_var:
+	ld h,0				; first we need to multiply y by the width of the gbuf (12)
+	ld d,h				; set the upper bytes of hl and de to 0
+	ld l,e				; hl = de
+	add hl,hl			; x2
+	add hl,de			; x3
+	add hl,hl			; x6
+	add hl,hl			; x12
+	ld e,a				; save original x
+	srl e				; /2
+	srl e				; /4
+	srl e				; /8
+	add hl,de			; add x offset
+	ld de,gbuf
+	add hl,de			; points to first byte of sprite in gbuf
+	and $7				; modulo 8, find number of bits we need to shift
+	ld de,12			; this is for drawSpriteXOR_loop, which requires de = 12
+	 jp z,drawSpriteXOR_loop	; copy an aligned sprite [tilemap.z80]
+; sprite is unaligned
+	dec e				; later we'll add hl,de to move to the next row in gbuf, de = 11
+	ld c,a				; save the number of bits to shift
+drawSprite8_loop:
+	push bc				; b = sprite height, c = number of bits to shift
+		ld a,(ix)		; load the first byte
+		ld b,c			; b = shift counter
+		ld c,d			; set c to 0
+drawSprite8_rotate:
+			rra			; shift sprite to the right
+			rr c		; rotate the carry into c
+		 djnz drawSprite8_rotate
+		xor (hl)		; or the sprite with the gbuf, otherwise there will be a white line to the left of the sprite
+		ld (hl),a		; update the gbuf
+		inc hl			; draw the second half of the sprite
+		ld a,c			; or the second half to the gbuf
+		xor (hl)		; .. so that it doesn't overwrite with white the rest of the byte
+		ld (hl),a		; update gbuf
+		add hl,de		; next row in gbuf
+		inc ix			; next byte in sprite
+	pop bc				; restore sprite height and number of bits to shift
+	djnz drawSprite8_loop
+	ret

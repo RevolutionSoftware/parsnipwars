@@ -246,6 +246,7 @@ releaseKeys:
 
 #include "tilemap.z80"
 #include "menu.z80"
+#include "sprites.z80"
 ;sprites:
 cursor_spr:
 .db %11100111

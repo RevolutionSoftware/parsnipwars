@@ -7,14 +7,47 @@ menu_txt:
 .db "Option 2", 0
 .db "Option 3", 0
 
-menuOptions:
+buildUnit_txt:
+.dw $0503				;XXYY x and y coordinates of menu
+.db 4					; width of menu (in bytes: sets of 8 pixels)
+.db 18					; # of menu options
+.db "Infantry", 0
+.db "Mech", 0
+.db "Heavy Tank", 0
+.db "Medium Tank", 0
+.db "Small Tank", 0
+.db "Recon", 0
+.db "Transport", 0
+.db "Giga Tank", 0
+;.db "Supply Truck",0
+.db "Artillery", 0
+.db "Rockets", 0
+;.db "Rail Turtle", 0
+.db "AA Artillery", 0
+.db "AA Tank", 0
+.db "AA Missles", 0
+.db "Fighter", 0
+.db "Bomber", 0
+.db "Assault Fgtr", 0
+.db "Btl Copter", 0
+.db "Trns Copter", 0
+
+menuOptions:	; total number of items in the menu
 .db 0
-selected:
+selected:		; currently selected option (0-X)
 .db 0
 menuCursorX:
 .db 0
 menuCursorY:
 .db 0
+textPos:		; pointer to the start of text data in the gbuf
+.dw $0000
+menuTop:		; id of first menu item shown on screen
+.db 0
+rectXY:			; $YYXX
+.dw $0000
+rectWH:			; $HHWW
+.dw $0000
 
 cursor_sprite:
 .db %00100000
@@ -24,25 +57,222 @@ cursor_sprite:
 .db %00100000
 
 ; Run when user presses 2nd on the map
-loadMenu:
+mapMenu:
 	ld bc, (cursorX)	 ; c = x, b = y
 	call getTile
 ; hl points to tile position
 	ld a, (hl)
-; ... decide which menu to draw based on tile id / if a player has been selected
-	ld hl, menu_txt
+
+	ld hl,buildUnit_txt
+	call loadScrollMenu
+	ret
+
+loadScrollMenu:
+	push hl				; hl points to menu data
+		bcall(_GrBufClr)
+	pop hl
+	push hl
+		inc hl
+		inc hl
+		inc hl
+		ld a,(hl)		; number menu options = number of strings to draw
+		ld (menuOptions),a
+		ld b,a
+		inc hl
+		ld de,$0006		; start at the top left of the buffer (with space for cursor)
+drawStrings_loop:		; this draws all of our strings to the graph buffer in 2 columns
+		push bc			; save the counter
+		push de			; save our pencol value
+			ld (penCol),de
+			bcall(_VPutS)
+		pop de			; restores penCol/penRow to their previous value
+		pop bc
+		ld a,d			; move 6 pixels down
+		add a,6			; remember, d holds the MSB, which gets drawn to (penRow)
+		ld d,a
+		cp 64-6			; check if we've reached bottom of screen
+		 jr c,$+5
+			ld de,$0036	; if so, set penRow to 0 and draw in next column
+		djnz drawStrings_loop
+		ld hl,gbuf-6	; because we add 6 to hl in the copyToStringBuf routine
+		ld de,appBackupScreen
+		ld a,20			; max number of entries
+copyToStringBuf:
+		ld b,6			; each line of text is 6 pixels tall
+copyToStringBuf_loop:
+		push bc
+			ld bc,6		; buffer is 12 bytes wide, with two columns, 6 bytes wide each
+			add hl,bc	; skips the other half of the graphbuffer
+			ldir		; copy the six bytes in gbuf to appBackupScreen
+		pop bc
+		djnz copyToStringBuf_loop
+		cp 11			; if a = 10, then we need to draw the right side of the buffer
+		 jr nz,$+5
+			ld hl,gbuf	; when we add 6, this will point to the right half
+		ld b,6
+		dec a
+		 jr nz,copyToStringBuf
+	pop hl
+	ld e, (hl)			; x coord
+	inc hl
+	ld d, (hl)			; y coord
+	ld (rectXY),de
+	inc hl
+	ld c, (hl)			; width
+	ld b,(6*8)+1		; height of textbox: 6 pixels*8 entries + 1 pixel beneath the text
+	ld (rectWH),bc
+;	push de				; de = x/y coords of menu, we need to calculate text position
+;		call drawRectangle
+;	pop de
+	inc d				; + 1 jump past the top of the rectangle
+	ld hl,gbuf
+	ld c,e
+	ld b,0
+	add hl,bc
+	ld a,d
+	add a,a				; a*12 should hopefully fit in 8-bits
+	add a,d				; .. because the scrolling menu has to start off
+	add a,a				; .. high on the screen, or else it won't fit
+	add a,a				; a*12
+	ld c,a
+	add hl,bc
+	ld (textPos),hl		; this is where we will start copying the text in appBackupScreen to
+
+	ld a,e
+	add a,a
+	add a,a
+	add a,a				; x position was byte-aligned, so we must *8
+	ld e,a
+	inc d
+	ld (menuCursorX),de	; save cursor x and y values
+
+
+	xor a
+	ld (selected),a		; reset cursor to first menu item (position 0)
+	ld (menuTop),a
+; redraw the background
+	call drawTilemap	; draws our tilemap to the gbuf
+	call drawCursorOn	; draws the cursor over top of the gbuf
+menuScroll:
+	ld de,(rectXY)
+	ld bc,(rectWH)
+	call drawRectangle
+	call fillTextBox
+	call drawMenuCursor	; draw sprite
+	call ionFastCopy
+
+; check if a key was pressed to quit the menu
+    ld a,group5
+    call getKey
+    rla
+     jp nc,quitMenu
+
+    ld a,group1
+    call getKey
+    cp diClear
+     jp z,quitMenu
+
+    ld a,group6
+    call getKey
+    cp di2nd
+    ld a,(selected)
+     jp z,releaseKeys
+
+	ld hl,menuScroll	; put menuScroll on the stack
+	push hl				; .. ret will jump to menuScroll
+
+; check keys
+	ld b,7				; the delay's mask, must be all 1's: %1, %11, %111, %111, etc.
+	call slowArrows		; returns c if the delay isn't finished [famwars.z80]
+	 ret c
+
+	ld hl,selected
+	rra					; check for down
+	 jr nc,menuScrollDown   ; if the bit is reset, down was pressed
+	bit 2,a
+	 jr z,menuScrollUp  ; normally up is the third bit, but here it's bit 2 because of the rra
+	ret
+
+menuScrollUp:
+; check if cursor is at position 0, if so can't continue
+	ld a,(hl)
+	or a
+	 ret z
+	ld a,(hl)
+	dec (hl)			; decreasing selected moves the cursor up
+	ld hl,menuTop
+	sub (hl)
+	 ret nz
+	dec (hl)
+	ret
+menuScrollDown:
+; check if menuOptions-1 = selected
+	ld a,(menuOptions)	; menuOptions starts at 1, wherease selected starts at 0
+	dec a				; .. so we need to subtract one
+	cp (hl)				; hl points to selected
+	 ret z
+	inc (hl)			; increase selected moves cursor down
+	ld a,(hl)
+	ld hl,menuTop
+	sub (hl)
+	cp 8
+	 ret c
+	inc (hl)
+	ret
+
+; Fills the text box with the proper text (based on menuTop value)
+fillTextBox:
+	ld a,(menuTop)
+	ld l,a
+	add a,a
+	add a,l
+	add a,a				; a*6, each menu entry is 6 pixels tall
+	ld l,a
+	ld h,0
+	ld e,l
+	ld d,h
+	add hl,hl
+	add hl,de
+	add hl,hl			; hl*6, remember buffer is 6 bytes wide
+	ld de,appBackupScreen
+	add hl,de
+	ex de,hl
+	ld hl,(textPos)
+	ld bc,$0806			; 8 lines of text, 6 rows each
+fillText_loopOut:
+	push bc
+fillText_loopMid:
+		ld b,6			; 6 bytes (first 6 columns of gbuf)
+fillText_loopIn:
+		ld a,(de)		; text buffer
+		or (hl)			; graph buffer
+		ld (hl),a
+		inc hl
+		inc de
+		djnz fillText_loopIn
+		ld a,c
+			ld c,6
+			add hl,bc	; move graph buffer down one row
+		ld c,a
+		dec c
+		 jr nz,fillText_loopMid
+	pop bc
+	djnz fillText_loopOut
+	ret
+
+loadMenu:
 	ld e, (hl)			; x coord
 	inc hl
 	ld d, (hl)			; y coord
 	inc hl
 	ld c, (hl)			; width
 	inc hl
-	ld a, (hl)			; height
+	ld a, (hl)			; height/# menu options
 	add a, a			; x2
 	add a, (hl)			; x3
 	add a, a			; x6
 	inc a				; add an extra space underneath the text
-	ld b, a				; bc = $WWHH
+	ld b, a				; bc = $HHWW
 drawMenu:
 	push de				; de = x/y coords of menu, we need to calculate text position
 	push hl				; hl = pointer to start of text data
@@ -134,11 +364,13 @@ menuCursorDown:
 	ret
 
 drawMenuCursor:
-	ld a,(selected)	 ; currently selected option
+	ld hl,menuTop		; the first menu item on screen
+	ld a,(selected)		; currently selected option
+	sub (hl)			; selected item - top menu item = cursor's position
 	ld l,a
-	add a,a			 ; x2
-	add a,l			 ; x3
-	add a,a			 ; x6
+	add a,a				; x2
+	add a,l				; x3
+	add a,a				; x6
 	ld hl,(menuCursorX)
 	add a,h
 	ld e,a

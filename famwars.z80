@@ -71,7 +71,7 @@ main:
 	ld a, group6
 	call getKey
 	cp di2nd
-	 jp z, loadMenu
+	 jp z, mapMenu			; [menu.z80]
 
 ; read in arrow keys
 	ld b,3
@@ -214,6 +214,7 @@ drawCursor:
 	ld a, (neutralCtr)
 	and $3
 	 ret z
+drawCursorOn:
 	ld a, (cursorY)			; calculate the cursor's position on the screen
 	ld hl, mapY
 	sub (hl)

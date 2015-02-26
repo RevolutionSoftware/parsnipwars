@@ -11,7 +11,7 @@
 ;EQUATES
 gbuf			= grbuf
 
-group0  		= %11111110
+group0  		= %11111110			; arrows
 
 group1  		= %11111101
 diClear 		= %10111111

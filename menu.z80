@@ -7,6 +7,22 @@ menu_txt:
 .db "Option 2", 0
 .db "Option 3", 0
 
+menuOptions:
+.db 0
+selected:
+.db 0
+menuCursorX:
+.db 0
+menuCursorY:
+.db 0
+
+cursor_sprite:
+.db %00100000
+.db %00110000
+.db %00111000
+.db %00110000
+.db %00100000
+
 ; Run when user presses 2nd on the map
 loadMenu:
 	ld bc, (cursorX)	 ; c = x, b = y
@@ -34,27 +50,85 @@ drawMenu:
 	pop hl
 	pop de
 	ld b,(hl)			; # menu options
+	ld a,b			  ; save number of menu options
+	ld (menuOptions),a  ; .. so we can use it in the cursor routine
 	inc hl				; start of text data
-	inc d
+	inc d			   ; + 1 jump past the top of the rectangle
 	ld a,e
 	add a,a
 	add a,a
-	add a,a				; x position was byte-aligned, so we must *8
-	add a,2				; shift text 2 pixels to the right (don't draw over top of box border)
+	add a,a				 ; x position was byte-aligned, so we must *8
+	ld e,a
+	inc d
+	ld (menuCursorX),de	 ; save cursor x and y values
+	dec d
+	add a,6				 ; shift text 6 pixels to the right (don't draw over top of box border)
 	ld e,a
 drawMenu_loop:
-    push bc				; b holds the number of menu options
-    push de				; de holds the current text coordinates
-    	ld (penCol),de	; update pencol
-    	bcall(_VPutS)	; draw the menu item
-    pop de
-    pop bc
-    ld a,d				; add 6 to the y coordinate
-    add a,6
-    ld d,a
-    djnz drawMenu_loop	; draw all menu items
-	call ionFastCopy	; draw the menu to the screen
-	jp pause			
+	push bc
+	push de
+		ld (penCol),de
+		bcall(_VPutS)
+	pop de
+	pop bc
+	ld a,d
+	add a,6
+	ld d,a
+	djnz drawMenu_loop
+
+;	call ionFastCopy	; draw the menu to the screen
+;	jp pause			
+
+	xor a
+	ld (selected),a		; reset cursor to first menu item (position 0)
+
+menuCursor:
+	call drawMenuCursor	; draw sprite
+	call ionFastCopy
+	call drawMenuCursor	; erase sprite
+
+	ld hl,menuCursor	; put menuCursor on the stack
+	push hl				; .. ret will jump to menuCursor
+
+; check keys
+	ld a,group0			; arrow keys
+	call getKey
+	ld hl,selected
+	rra					; check for down
+	 jr nc,menuCursorDown   ; if the bit is reset, down was pressed
+	bit 2,a
+	 jr z,menuCursorUp  ; normally up is the third bit, but here it's bit 2 because of the rra
+	ret
+
+menuCursorUp:
+; check if cursor is at position 0, if so can't continue
+	ld a,(hl)
+	or a
+	 ret z
+	dec (hl)			; decreasing selected moves the cursor up
+	ret
+menuCursorDown:
+; check if menuOptions-1 = selected
+	ld a,(menuOptions)	; menuOptions starts at 1, wherease selected starts at 0
+	dec a				; .. so we need to subtract one
+	cp (hl)				; hl points to selected
+	 ret z
+	inc (hl)			; increase selected moves cursor down
+	ret
+
+drawMenuCursor:
+	ld a,(selected)	 ; currently selected option
+	ld l,a
+	add a,a			 ; x2
+	add a,l			 ; x3
+	add a,a			 ; x6
+	ld hl,(menuCursorX)
+	add a,h
+	ld e,a
+	ld a,l
+	ld b,5
+	ld ix,cursor_sprite
+	jp drawSprite_var
 
 ; Input:
 ; X = c, Y = b

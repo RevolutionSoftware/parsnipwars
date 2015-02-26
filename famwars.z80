@@ -71,24 +71,9 @@ main:
 	 jp z, loadMenu
 
 ; read in arrow keys
-	ld a, group0			; the arrow keys are in group0
-	call getKey
-
-	ld hl, keyPressed		; this holds whether or not a key was pressed
-	inc a					; this checks if a key was pressed
-	 jr nz, +_
-;	 jr nz,$+5				; if no key was pressed, z will be set
-		ld (hl), $FF		; .. and we want to reset keyPressed to $FF
-		ret					; .. and quit
-_:
-	dec a					; to compensate for the +1
-
-	ld e, a					; save a, which holds our keypress
-		inc (hl)			; increase keyPressed
-		ld a, (hl)			; check if keyPressed = 0 or a multiple of 4
-		and $3				; 0, 4, 8, 12, 16, etc. AND'd with 3 will all return 0
-		 ret nz				; if it's not a multiple of 4, don't read keys this frame
-	ld a,e					; restore keypress
+	ld b,3
+	call slowArrows
+	 ret c
 
 	rra						; down = %11111110, so rra will put a zero into carry
 	 jr nc, moveDown			; so if there was no carry, move cursor down
@@ -98,6 +83,30 @@ _:
 	 jr nc, moveRight
 	rra
 	 jr nc, moveUp
+	ret
+
+;b = delay mask
+slowArrows:
+	ld a, group0			; the arrow keys are in group0
+	call getKey
+
+	ld hl, keyPressed		; this holds whether or not a key was pressed
+	inc a					; this checks if a key was pressed
+	 jr nz, +_				; if no key was pressed, z will be set
+		scf
+		ld (hl), $FF		; .. and we want to reset keyPressed to $FF
+		ret					; .. and quit
+_:
+	dec a					; to compensate for the +1
+
+	ld e, a					; save a, which holds our keypress
+		inc (hl)			; increase keyPressed
+		ld a, (hl)			; check if keyPressed = 0 or a multiple of 4
+		and b				; 0, 4, 8, 12, 16, etc. AND'd with 3 will all return 0
+		scf
+		 ret nz				; if it's not a multiple of 4, don't read keys this frame
+	ccf
+	ld a,e					; restore keypress
 	ret
 
 ;######################

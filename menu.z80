@@ -76,12 +76,8 @@ drawMenu_loop:
 	ld d,a
 	djnz drawMenu_loop
 
-;	call ionFastCopy	; draw the menu to the screen
-;	jp pause			
-
 	xor a
 	ld (selected),a		; reset cursor to first menu item (position 0)
-
 menuCursor:
 	call drawMenuCursor	; draw sprite
 	call ionFastCopy
@@ -91,8 +87,10 @@ menuCursor:
 	push hl				; .. ret will jump to menuCursor
 
 ; check keys
-	ld a,group0			; arrow keys
-	call getKey
+	ld b,7
+	call slowArrows
+	 ret c
+
 	ld hl,selected
 	rra					; check for down
 	 jr nc,menuCursorDown   ; if the bit is reset, down was pressed

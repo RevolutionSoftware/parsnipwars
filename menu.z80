@@ -76,6 +76,8 @@ drawMenu_loop:
 	ld d,a
 	djnz drawMenu_loop
 
+	call releaseKeys
+
 	xor a
 	ld (selected),a		; reset cursor to first menu item (position 0)
 menuCursor:
@@ -83,12 +85,29 @@ menuCursor:
 	call ionFastCopy
 	call drawMenuCursor	; erase sprite
 
+; check if a key was pressed to quit the menu
+    ld a,group5
+    call getKey
+    rla
+     jr nc,quitMenu
+
+    ld a,group1
+    call getKey
+    cp diClear
+     jr z,quitMenu
+
+    ld a,group6
+    call getKey
+    cp di2nd
+    ld a,(selected)
+     jp z,releaseKeys
+
 	ld hl,menuCursor	; put menuCursor on the stack
 	push hl				; .. ret will jump to menuCursor
 
 ; check keys
-	ld b,7
-	call slowArrows
+	ld b,7				; the delay's mask, must be all 1's: %1, %11, %111, %111, etc.
+	call slowArrows		; returns c if the delay isn't finished [famwars.z80]
 	 ret c
 
 	ld hl,selected
@@ -127,6 +146,10 @@ drawMenuCursor:
 	ld b,5
 	ld ix,cursor_sprite
 	jp drawSprite_var
+
+quitMenu:
+    scf
+    jp releaseKeys
 
 ; Input:
 ; X = c, Y = b

@@ -1,47 +1,48 @@
 ;;; famwars.z80
-;############################
-;#		Fam Wars - 83+		#
-;############################
+;;############################
+;;#		Fam Wars - 83+		#
+;;############################
 
 .nolist
 #include "ti83plus.inc"
 #include "ion.inc"
 .list
 
-;EQUATES
+;;EQUATES
 gbuf			= grbuf
 
-group0  		= %11111110			; arrows
+group0			= %11111110		; arrows
 
-group1  		= %11111101
-diClear 		= %10111111
+group1			= %11111101
+diClear			= %10111111
 
-group2  		= %11111011
-;etc.
+group2			= %11111011
+;;etc.
 
 group5			= %11011111
 diAlpha			= %01111111
 
-group6  		= %10111111
+group6			= %10111111
 di2nd			= %11011111
 
 mapX			= saferam1
 mapY			= mapX + 1
 mapWidth		= mapY + 1
-mapHeight 		= mapWidth + 1
-mapPtr  		= mapHeight + 1		;mapPtr = ¡¡2 bytes!!
-cursorX 		= mapPtr + 2
-cursorY 		= cursorX + 1
+mapHeight		= mapWidth + 1
+mapPtr			= mapHeight + 1		;mapPtr = ¡¡2 bytes!!
+cursorX			= mapPtr + 2
+cursorY			= cursorX + 1
 neutralCtr		= cursorY + 1		; increases each time we draw the map, every other frame draw neutral buildings
 keyPressed		= neutralCtr + 1	; makes sure the cursor doesn't move too fast
-numBuildings 	= keyPressed + 1	; contains the number of buildings in a map
+numBuildings		= keyPressed + 1	; contains the number of buildings in a map
 
-buildingArray	= saferam1 + 200	; dedicate at least 150 bytes for now
+buildingArray		= saferam1 + 200	; dedicate at least 150 bytes for now
 
-.db $BB, $6D						; Magic token
-.org $9D95							; Start adress
+
+	.db $BB, $6D				; Magic token
+	.org $9D95							; Start adress
 	ret
-	 jr nc, start					; ion header
+	 jr nc, start				; ion header
 .db "TileMap!", 0
 
 start:
@@ -58,29 +59,29 @@ main:
 	call drawCursor			; draws the cursor over top of the gbuf
 	call ionFastCopy		; use ion's fastcopy routine to copy the gbuf to the LCD
 
-; read keys
+;; read keys
 	ld a, group1			; check if [Clear] was pressed
-	call getKey				; opens key group stored in a and reads a value
-	cp diClear				; if [Clear] was pressed
-	 jp z, exit				; .. start the exit procedure
+	call getKey			; opens key group stored in a and reads a value
+	cp diClear			; if [Clear] was pressed
+	 jp z, exit			; .. start the exit procedure
 
-	ld hl, main				; this puts main onto the stack
-	push hl					; the next ret will put main into the pc and jump there
+	ld hl, main			; this puts main onto the stack
+	push hl				; the next ret will put main into the pc and jump there
 
-; is di2nd pressed?
+;; is di2nd pressed?
 	ld a, group6
 	call getKey
 	cp di2nd
 	 jp z, mapMenu			; [menu.z80]
 
-; read in arrow keys
+;; read in arrow keys
 	ld b,3
 	call slowArrows
 	 ret c
 
-	rra						; down = %11111110, so rra will put a zero into carry
-	 jr nc, moveDown			; so if there was no carry, move cursor down
-	rra						; repeat with other arrow keys
+	rra				; down = %11111110, so rra will put a zero into carry
+	 jr nc, moveDown		; so if there was no carry, move cursor down
+	rra				; repeat with other arrow keys
 	 jr nc, moveLeft
 	rra
 	 jr nc, moveRight
@@ -88,58 +89,58 @@ main:
 	 jr nc, moveUp
 	ret
 
-;b = delay mask
+;;b = delay mask
 slowArrows:
 	ld a, group0			; the arrow keys are in group0
 	call getKey
 
 	ld hl, keyPressed		; this holds whether or not a key was pressed
-	inc a					; this checks if a key was pressed
-	 jr nz, +_				; if no key was pressed, z will be set
+	inc a				; this checks if a key was pressed
+	 jr nz, +_			; if no key was pressed, z will be set
 		scf
 		ld (hl), $FF		; .. and we want to reset keyPressed to $FF
-		ret					; .. and quit
+		ret			; .. and quit
 _:
-	dec a					; to compensate for the +1
+	dec a				; to compensate for the +1
 
-	ld e, a					; save a, which holds our keypress
-		inc (hl)			; increase keyPressed
-		ld a, (hl)			; check if keyPressed = 0 or a multiple of 4
-		and b				; 0, 4, 8, 12, 16, etc. AND'd with 3 will all return 0
+	ld e, a				; save a, which holds our keypress
+		inc (hl)		; increase keyPressed
+		ld a, (hl)		; check if keyPressed = 0 or a multiple of 4
+		and b			; 0, 4, 8, 12, 16, etc. AND'd with 3 will all return 0
 		scf
-		 ret nz				; if it's not a multiple of 4, don't read keys this frame
+		 ret nz			; if it's not a multiple of 4, don't read keys this frame
 	ccf
-	ld a,e					; restore keypress
+	ld a,e				; restore keypress
 	ret
 
-;######################
+;;######################
 moveDown:
-;# moves the cursor down one tile
-;# if tile is beyond the middle of
-;# the screen, attempts to scroll map
-;######################
+;;# moves the cursor down one tile
+;;# if tile is beyond the middle of
+;;# the screen, attempts to scroll map
+;;######################
 	ld a, (cursorY)			; calculate the cursor's position on the screen
-	ld hl, mapY				; to do this, we subtract mapY from cursorY
-	sub (hl)				; cursorY-mapY
-	cp 6					; if the cursor is in row 6 or above
-	 call nc, moveMapDown	; .. try to move the map down
+	ld hl, mapY			; to do this, we subtract mapY from cursorY
+	sub (hl)			; cursorY-mapY
+	cp 6				; if the cursor is in row 6 or above
+	 call nc, moveMapDown		; .. try to move the map down
 	ld a, (cursorY)			; grab the cursor's absolute Y value
 	ld hl, mapHeight		; compare that with the mapHeight
-	inc a					; we add one because map height starts at 1, not 0 like cursorY
-	cp (hl)					; if the two are equal, we're at the bottom of the map
-	 ret z					; .. so we should quit
+	inc a				; we add one because map height starts at 1, not 0 like cursorY
+	cp (hl)				; if the two are equal, we're at the bottom of the map
+	 ret z				; .. so we should quit
 	ld (cursorY), a			; otherwise, update cursorY and return to main
 	ret
 moveMapDown:				; now check if we've reached the edge of the map
 	ld a, (mapHeight)		; we need to compare mapY to mapHeight-8
-	sub 8					; subtract 8 because there are 8 rows on screen
-	cp (hl)					; if mapY = mapHeight-8, we've reached the bottom of the screen
-	 ret z					; .. and should quit
-	inc (hl)				; otherwise, increase mapY (remember, hl = mapY from above)
+	sub 8				; subtract 8 because there are 8 rows on screen
+	cp (hl)				; if mapY = mapHeight-8, we've reached the bottom of the screen
+	 ret z				; .. and should quit
+	inc (hl)			; otherwise, increase mapY (remember, hl = mapY from above)
 	ret
-;######################
+;;######################
 moveLeft:
-;######################
+;;######################
 	ld a, (cursorX)
 	ld hl, mapX
 	sub (hl)
@@ -157,12 +158,12 @@ moveMapLeft:
 	 ret z
 	dec (hl)
 	ret
-;######################
+;;######################
 moveRight:
-;# moves the cursor right one tile
-;# basically the same idea as moveDown
-;# but with X values instead of Y
-;######################
+;;# moves the cursor right one tile
+;;# basically the same idea as moveDown
+;;# but with X values instead of Y
+;;######################
 	ld a, (cursorX)
 	ld hl, mapX
 	sub (hl)
@@ -182,9 +183,9 @@ moveMapRight:
 	 ret z
 	inc (hl)
 	ret
-;######################
+;;######################
 moveUp:
-;######################
+;;######################
 	ld a, (cursorY)
 	ld hl, mapY
 	sub (hl)
@@ -204,13 +205,13 @@ moveMapUp:
 	ret
 
 
-;for now, we just quit. later we might want to do some clean up before exiting
+;;for now, we just quit. later we might want to do some clean up before exiting
 exit:
 	ret
 
-;######################
+;;######################
 drawCursor:
-;######################
+;;######################
 	ld a, (neutralCtr)
 	and $3
 	 ret z
@@ -218,28 +219,28 @@ drawCursorOn:
 	ld a, (cursorY)			; calculate the cursor's position on the screen
 	ld hl, mapY
 	sub (hl)
-	ld e, a					; save the y coordinate because a gets overwritten later in the routine
+	ld e, a				; save the y coordinate because a gets overwritten later in the routine
 	ld a, (cursorX)			; now calculate the x coordinate
 	ld hl, mapX
 	sub (hl)
-	ld l, e					; load the y coordinate into l
+	ld l, e				; load the y coordinate into l
 	ld ix, cursor_spr		; a = x, l = y, ix = sprite
 	jp drawSpriteXOR
 
-;######################
+;;######################
 getKey:
-;# input:
-;#	- a = key group to read from
-;# output:
-;#	- a = keys pressed ($FF = no keys pressed)
-;######################
-	out (1), a				; opens the key group we want to read from
-	push af					; a delay for 84+/SE calcs
-	pop af					; (unnecessary for 83+/SE calcs)
-	in a, (1)				; read value from key port
+;;# input:
+;;#	- a = key group to read from
+;;# output:
+;;#	- a = keys pressed ($FF = no keys pressed)
+;;######################
+	out (1), a			; opens the key group we want to read from
+	push af				; a delay for 84+/SE calcs
+	pop af				; (unnecessary for 83+/SE calcs)
+	in a, (1)			; read value from key port
 	ret
 
-; a should hold the value of the key you pressed
+;; a should hold the value of the key you pressed
 pause:
 	call releaseKeys
 pause_loop:
@@ -260,7 +261,7 @@ releaseKeys:
 #include "tilemap.z80"
 #include "menu.z80"
 #include "sprites.z80"
-;sprites:
+;;sprites:
 cursor_spr:
 .db %11100111
 .db %10000001

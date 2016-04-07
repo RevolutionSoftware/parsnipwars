@@ -1,16 +1,16 @@
-;######################
+;;######################
 loadMap:
-;# loads a map and updates mapWidth and mapHeight
-;# input:
-;#	- hl = pointer to map
-;# output:
-;#	- mapWidth and mapHeight are set
-;######################
+;;# loads a map and updates mapWidth and mapHeight
+;;# input:
+;;#	- hl = pointer to map
+;;# output:
+;;#	- mapWidth and mapHeight are set
+;;######################
 	ld de, mapWidth
 	ldi
 	ldi
 	ld (mapPtr), hl
-;right now hl points to the map data
+;;right now hl points to the map data
 	xor a
 	ld (numBuildings), a		; reset the number of buildings in the map
 	ld bc, 0					; c = current column, b = current row
@@ -53,13 +53,13 @@ _:
 ;blablabla
 	ret
 
-;######################
+;;######################
 drawTilemap:
-;# draws a tilemap to the graph buffer
-;# inputs:
-;#	- none, just make sure map variables are set
-;######################
-; first we need to load the pointer to the tilemap
+;;# draws a tilemap to the graph buffer
+;;# inputs:
+;;#	- none, just make sure map variables are set
+;;######################
+;; first we need to load the pointer to the tilemap
 	ld hl, neutralCtr		;
 	inc (hl)
 	ld hl, (mapPtr)			; skip width/height
@@ -103,9 +103,9 @@ _:
 	 jr nz, drawRow_loop
 	ret
 
-;######################
+;;######################
 drawTileA:
-;######################
+;;######################
 	ld l, a
 	ld h, 0
 	add hl, hl
@@ -115,22 +115,22 @@ drawTileA:
 	add hl, de
 	push hl
 	pop ix
-;calculate y coordinate: (8-c)*8
+;;calculate y coordinate: (8-c)*8
 	ld a, 8
 	sub c					; 8-c
 	ld l, a					; l holds the y coordinate
-;calculate x coordinate: (12-b)*8
+;;calculate x coordinate: (12-b)*8
 	ld a, 12
 	sub b					; a = x coordinate
 
-;######################
+;;######################
 drawSprite:
-;# Draws an aligned sprite to the gbuf
-;# inputs:
-;#	- a = x (tile position: 0-11)
-;#	- l = y (tile position: 0-7)
-;#	- ix = sprite
-;######################
+;;# Draws an aligned sprite to the gbuf
+;;# inputs:
+;;#	- a = x (tile position: 0-11)
+;;#	- l = y (tile position: 0-7)
+;;#	- ix = sprite
+;;######################
 	call getGbufOffsetTile	; gets the gbuf offset in hl and prepares b/de for sprite loop
 drawSprite_loop:
 	ld a, (ix)				; read sprite byte
@@ -140,14 +140,14 @@ drawSprite_loop:
 	djnz drawSprite_loop	; repeat b times (8)
 	ret
 
-;######################
+;;######################
 drawSpriteXOR:
-;# XORs a tile-aligned sprite to the gbuf
-;# inputs:
-;#	- a = x coord
-;#	- l = y coord
-;#	- ix = sprite
-;######################
+;;# XORs a tile-aligned sprite to the gbuf
+;;# inputs:
+;;#	- a = x coord
+;;#	- l = y coord
+;;#	- ix = sprite
+;;######################
 	call getGbufOffsetTile	; prepare hl, b, and de for sprite loop
 drawSpriteXOR_loop:
 	ld a, (ix)				; sprite byte
@@ -158,17 +158,17 @@ drawSpriteXOR_loop:
 	djnz drawSpriteXOR_loop	; repeat b times
 	ret
 
-;######################
+;;######################
 getGbufOffsetTile:
-;# calculates the tile offset in the gbuf
-;#input:
-;#	- a = x tile
-;#	- l = y tile
-;# output:
-;#	- hl = gbuf offset
-;#	- b = 8
-;#	- de = 12
-;######################
+;;# calculates the tile offset in the gbuf
+;;#input:
+;;#	- a = x tile
+;;#	- l = y tile
+;;# output:
+;;#	- hl = gbuf offset
+;;#	- b = 8
+;;#	- de = 12
+;;######################
 	ld de, gbuf				; add x offset to gbuf
 	add a, e					; a will never be > 12
 	ld e, a					; .. so there's no risk of overflow
@@ -187,17 +187,17 @@ getGbufOffsetTile:
 	ld b, 8					; each sprite has 8 rows
 	ret
 
-;######################
+;;######################
 getGbufOffset:
-;# calculates the offset in the gbuf
-;#input:
-;#	- a = x tile
-;#	- l = y tile
-;# output:
-;#	- hl = gbuf offset
-;#	- b = 8
-;#	- de = 12
-;######################
+;;# calculates the offset in the gbuf
+;;#input:
+;;#	- a = x tile
+;;#	- l = y tile
+;;# output:
+;;#	- hl = gbuf offset
+;;#	- b = 8
+;;#	- de = 12
+;;######################
 	ld de, gbuf				; add x offset to gbuf
 	add a, e					; a will never be > 12
 	ld e, a					; .. so there's no risk of overflow

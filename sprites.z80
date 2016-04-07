@@ -1,12 +1,12 @@
-;######################
+;;######################
 drawSprite8:
-;# draws an 8x8 (XOR'd) sprite to the gbuf
-;# input:
-;#	a = x
-;#	e = y
-;#	ix = sprite data
-;#	b = sprite height (call drawSprite_var)
-;######################
+;;# draws an 8x8 (XOR'd) sprite to the gbuf
+;;# input:
+;;#	a = x
+;;#	e = y
+;;#	ix = sprite data
+;;#	b = sprite height (call drawSprite_var)
+;;######################
 	ld b,8
 drawSprite_var:
 	ld h,0				; first we need to multiply y by the width of the gbuf (12)
@@ -26,7 +26,7 @@ drawSprite_var:
 	and $7				; modulo 8, find number of bits we need to shift
 	ld de,12			; this is for drawSpriteXOR_loop, which requires de = 12
 	 jp z,drawSpriteXOR_loop	; copy an aligned sprite [tilemap.z80]
-; sprite is unaligned
+;; sprite is unaligned
 	dec e				; later we'll add hl,de to move to the next row in gbuf, de = 11
 	ld c,a				; save the number of bits to shift
 drawSprite8_loop:

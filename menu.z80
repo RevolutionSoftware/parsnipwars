@@ -19,10 +19,10 @@ buildUnit_txt:
 .db "Recon", 0
 .db "Transport", 0
 .db "Giga Tank", 0
-;.db "Supply Truck",0
+;;.db "Supply Truck",0
 .db "Artillery", 0
 .db "Rockets", 0
-;.db "Rail Turtle", 0
+;;.db "Rail Turtle", 0
 .db "AA Artillery", 0
 .db "AA Tank", 0
 .db "AA Missles", 0
@@ -56,11 +56,11 @@ cursor_sprite:
 .db %00110000
 .db %00100000
 
-; Run when user presses 2nd on the map
+;; Run when user presses 2nd on the map
 mapMenu:
 	ld bc, (cursorX)	 ; c = x, b = y
 	call getTile
-; hl points to tile position
+;; hl points to tile position
 	ld a, (hl)
 
 	ld hl,buildUnit_txt
@@ -95,7 +95,7 @@ drawStrings_loop:		; this draws all of our strings to the graph buffer in 2 colu
 			ld de,$0036	; if so, set penRow to 0 and draw in next column
 		djnz drawStrings_loop
 		ld hl,gbuf-6	; because we add 6 to hl in the copyToStringBuf routine
-		ld de,appBackupScreen
+		ld de,appBackUpScreen
 		ld a,20			; max number of entries
 copyToStringBuf:
 		ld b,6			; each line of text is 6 pixels tall
@@ -121,9 +121,9 @@ copyToStringBuf_loop:
 	ld c, (hl)			; width
 	ld b,(6*8)+1		; height of textbox: 6 pixels*8 entries + 1 pixel beneath the text
 	ld (rectWH),bc
-;	push de				; de = x/y coords of menu, we need to calculate text position
-;		call drawRectangle
-;	pop de
+;;	push de				; de = x/y coords of menu, we need to calculate text position
+;;		call drawRectangle
+;;	pop de
 	inc d				; + 1 jump past the top of the rectangle
 	ld hl,gbuf
 	ld c,e
@@ -150,7 +150,7 @@ copyToStringBuf_loop:
 	xor a
 	ld (selected),a		; reset cursor to first menu item (position 0)
 	ld (menuTop),a
-; redraw the background
+;; redraw the background
 	call drawTilemap	; draws our tilemap to the gbuf
 	call drawCursorOn	; draws the cursor over top of the gbuf
 menuScroll:
@@ -161,7 +161,7 @@ menuScroll:
 	call drawMenuCursor	; draw sprite
 	call ionFastCopy
 
-; check if a key was pressed to quit the menu
+;; check if a key was pressed to quit the menu
     ld a,group5
     call getKey
     rla
@@ -181,7 +181,7 @@ menuScroll:
 	ld hl,menuScroll	; put menuScroll on the stack
 	push hl				; .. ret will jump to menuScroll
 
-; check keys
+;; check keys
 	ld b,7				; the delay's mask, must be all 1's: %1, %11, %111, %111, etc.
 	call slowArrows		; returns c if the delay isn't finished [famwars.z80]
 	 ret c
@@ -194,7 +194,7 @@ menuScroll:
 	ret
 
 menuScrollUp:
-; check if cursor is at position 0, if so can't continue
+;; check if cursor is at position 0, if so can't continue
 	ld a,(hl)
 	or a
 	 ret z
@@ -206,7 +206,7 @@ menuScrollUp:
 	dec (hl)
 	ret
 menuScrollDown:
-; check if menuOptions-1 = selected
+;; check if menuOptions-1 = selected
 	ld a,(menuOptions)	; menuOptions starts at 1, wherease selected starts at 0
 	dec a				; .. so we need to subtract one
 	cp (hl)				; hl points to selected
@@ -220,7 +220,7 @@ menuScrollDown:
 	inc (hl)
 	ret
 
-; Fills the text box with the proper text (based on menuTop value)
+;; Fills the text box with the proper text (based on menuTop value)
 fillTextBox:
 	ld a,(menuTop)
 	ld l,a
@@ -234,7 +234,7 @@ fillTextBox:
 	add hl,hl
 	add hl,de
 	add hl,hl			; hl*6, remember buffer is 6 bytes wide
-	ld de,appBackupScreen
+	ld de,appBackUpScreen
 	add hl,de
 	ex de,hl
 	ld hl,(textPos)
@@ -315,7 +315,7 @@ menuCursor:
 	call ionFastCopy
 	call drawMenuCursor	; erase sprite
 
-; check if a key was pressed to quit the menu
+;; check if a key was pressed to quit the menu
     ld a,group5
     call getKey
     rla
@@ -335,7 +335,7 @@ menuCursor:
 	ld hl,menuCursor	; put menuCursor on the stack
 	push hl				; .. ret will jump to menuCursor
 
-; check keys
+;; check keys
 	ld b,7				; the delay's mask, must be all 1's: %1, %11, %111, %111, etc.
 	call slowArrows		; returns c if the delay isn't finished [famwars.z80]
 	 ret c
@@ -348,14 +348,14 @@ menuCursor:
 	ret
 
 menuCursorUp:
-; check if cursor is at position 0, if so can't continue
+;; check if cursor is at position 0, if so can't continue
 	ld a,(hl)
 	or a
 	 ret z
 	dec (hl)			; decreasing selected moves the cursor up
 	ret
 menuCursorDown:
-; check if menuOptions-1 = selected
+;; check if menuOptions-1 = selected
 	ld a,(menuOptions)	; menuOptions starts at 1, wherease selected starts at 0
 	dec a				; .. so we need to subtract one
 	cp (hl)				; hl points to selected
@@ -383,9 +383,9 @@ quitMenu:
     scf
     jp releaseKeys
 
-; Input:
-; X = c, Y = b
-; Output: tile in tilemap - hl
+;; Input:
+;; X = c, Y = b
+;; Output: tile in tilemap - hl
 getTile:
 	ld hl, (mapWidth)
 	call multBL
@@ -394,7 +394,7 @@ getTile:
 	add hl, de
 	ret
 
-; multiplies HL=B*L
+;; multiplies HL=B*L
 multBL:
 	ld e, l			; ld de,hl
 	ld d, 0
@@ -405,13 +405,13 @@ _:
 	djnz -_
 	ret
 
-;######################
+;;######################
 drawRectangle:
-;# draws an outlined rectangle
-;# input:
-;#	- de = starting x/y (de = $YYXX)
-;#	- bc = width (in bytes) and height (pixels): $HHWW
-;######################
+;;# draws an outlined rectangle
+;;# input:
+;;#	- de = starting x/y (de = $YYXX)
+;;#	- bc = width (in bytes) and height (pixels): $HHWW
+;;######################
 	ld a, e						; x
 	ld l, d						; y
 	push bc						; save width/height
@@ -427,8 +427,8 @@ drawRectangleMiddle:
 	djnz drawRectangleMiddle	; repeat rectangleHeight times
 	ld a, %01111111				; now draw the bottom row
 	ld e, $FF					; a solid line
-;a = outer byte
-;e = inner byte
+;;a = outer byte
+;;e = inner byte
 rectangleRow:
 	push bc
 		ld (hl), a				; outer pattern into the address of hl

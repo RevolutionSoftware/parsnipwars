@@ -1,0 +1,31 @@
+{
+    "folders":
+    [
+        {
+            "path": "."
+        }
+    ],
+    "settings":
+    {
+        "tab_size": 4
+    },
+    "build_systems":
+    [
+        {
+            "name": "Make",
+            "shell_cmd": "make"
+        },
+        {
+            "name": "Make emulate",
+            "shell_cmd": "make emulate"
+        },
+        {
+            "name": "Make debug",
+            "shell_cmd": "make debug"
+        },
+        {
+            "name": "Make clean",
+            "shell_cmd": "make clean"
+        }
+    ]
+}

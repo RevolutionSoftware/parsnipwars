@@ -21,9 +21,6 @@ OUTPUT		= "famwars.8xp"
 all: ${FILES}
 		${ASM} ${ARGS} ${FILES_TO_ASM} ${OUTPUT}
 
-famwars: ${FILES}
-		${ASM} ${ARGS} ${FILES_TO_ASM} ${OUTPUT}
-
 debug: ${FILES}
 		${ASM} ${ARGS} ${DEBUG_ARGS} ${FILES_TO_ASM} ${OUTPUT}
 

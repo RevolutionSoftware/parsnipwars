@@ -6,7 +6,7 @@ ARGS = "-A"
 
 DEBUG_ARGS = "-T"
 
-FILES = parsnipwars.z80 \
+FILES = main.z80 \
     ion.inc \
     maps.inc \
     ti83plus.inc \
@@ -14,9 +14,9 @@ FILES = parsnipwars.z80 \
     tiles.inc\
 
 FILES_TO_ASM =	\
-    parsnipwars.z80
+    main.z80
 
-OUTPUT		= "parsnipwars.8xp"
+OUTPUT		= "parswar.8xp"
 
 all: ${FILES}
 		${ASM} ${ARGS} ${FILES_TO_ASM} ${OUTPUT}

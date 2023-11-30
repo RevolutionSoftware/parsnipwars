@@ -6,7 +6,7 @@ ARGS = "-A"
 
 DEBUG_ARGS = "-T"
 
-FILES = famwars.z80 \
+FILES = parsnipwars.z80 \
     ion.inc \
     maps.inc \
     ti83plus.inc \
@@ -14,9 +14,9 @@ FILES = famwars.z80 \
     tiles.inc\
 
 FILES_TO_ASM =	\
-    famwars.z80
+    parsnipwars.z80
 
-OUTPUT		= "famwars.8xp"
+OUTPUT		= "parsnipwars.8xp"
 
 all: ${FILES}
 		${ASM} ${ARGS} ${FILES_TO_ASM} ${OUTPUT}
